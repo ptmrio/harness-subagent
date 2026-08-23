@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Spawn a one-shot harness subagent. Parents must invoke this file, not copy it.
-# Usage: spawn.sh --backend claude|codex|grok --mode review|implement|visual \
+# Usage: spawn.sh --backend claude|codex|grok [--mode review|implement|visual] \
 #                 --project DIR --run DIR [--model TOKEN] [--effort TOKEN] [--image PATH]...
 set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: spawn.sh --backend claude|codex|grok --mode review|implement|visual \
+Usage: spawn.sh --backend claude|codex|grok [--mode review|implement|visual] \
                 --project DIR --run DIR [--model TOKEN] [--effort TOKEN] [--image PATH]...
                 [--dry-run] [--help]
 
@@ -16,6 +16,12 @@ EOF
 }
 
 die() { echo "spawn.sh: $*" >&2; exit 2; }
+
+need_val() {
+  if [[ -z "${2-}" || "${2-}" == --* ]]; then
+    die "missing value for $1"
+  fi
+}
 
 ok_token() {
   [[ "$1" =~ ^[A-Za-z0-9._+-]+$ ]]
@@ -32,13 +38,13 @@ IMAGES=()
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --backend) BACKEND="${2-}"; shift 2 ;;
-    --mode) MODE="${2-}"; shift 2 ;;
-    --project) PROJECT="${2-}"; shift 2 ;;
-    --run) RUN="${2-}"; shift 2 ;;
-    --model) MODEL="${2-}"; shift 2 ;;
-    --effort) EFFORT="${2-}"; shift 2 ;;
-    --image) IMAGES+=("${2-}"); shift 2 ;;
+    --backend) need_val "$1" "${2-}"; BACKEND="$2"; shift 2 ;;
+    --mode) need_val "$1" "${2-}"; MODE="$2"; shift 2 ;;
+    --project) need_val "$1" "${2-}"; PROJECT="$2"; shift 2 ;;
+    --run) need_val "$1" "${2-}"; RUN="$2"; shift 2 ;;
+    --model) need_val "$1" "${2-}"; MODEL="$2"; shift 2 ;;
+    --effort) need_val "$1" "${2-}"; EFFORT="$2"; shift 2 ;;
+    --image) need_val "$1" "${2-}"; IMAGES+=("$2"); shift 2 ;;
     --dry-run) DRY=1; shift ;;
     --help|-h) usage; exit 0 ;;
     *) die "unknown argument: $1" ;;

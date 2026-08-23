@@ -82,7 +82,7 @@ If you only paste the subagent's answer, you wasted the run.
 npx skills add ptmrio/harness-subagent -g
 ```
 
-That is the [skills.sh](https://skills.sh) installer: one command, copies the whole skill (`SKILL.md`, `references/`, `scripts/`, `assets/`, `evals/`) into the agents on this machine — Cursor Agent, Claude Code, Codex, and the rest the CLI detects. `-g` is user-level, so it is not tied to one repo. Grok Bot is a separate app; it only uses this skill if that Bot can run a CLI and can load the skill (or you point it at `SKILL.md`).
+That is the [skills.sh](https://skills.sh) installer: one command, copies the whole skill (`SKILL.md`, `references/`, `scripts/`, `assets/`, `evals/`, `tests/`) into the agents on this machine — Cursor Agent, Claude Code, Codex, and the rest the CLI detects. `-g` is user-level, so it is not tied to one repo. Grok Bot is a separate app; it only uses this skill if that Bot can run a CLI and can load the skill (or you point it at `SKILL.md`).
 
 ### Pin defaults (optional)
 
@@ -113,7 +113,7 @@ Already have a checkout? Copy the skill root, not just `SKILL.md`:
 ```bash
 mkdir -p ~/.claude/skills/harness-subagent
 cp SKILL.md LICENSE README.md ~/.claude/skills/harness-subagent/
-cp -r references scripts assets evals ~/.claude/skills/harness-subagent/
+cp -r references scripts assets evals tests ~/.claude/skills/harness-subagent/
 ```
 
 Then ask in those words: orchestrate this, get a second opinion, pressure-test a plan or diff, or call Codex / Claude Code / Grok as a subagent.
@@ -123,6 +123,14 @@ Then ask in those words: orchestrate this, get a second opinion, pressure-test a
 At least one of `claude`, `codex`, `grok`, or `cursor-agent` on `PATH` and logged in. Optional extras: `gemini`, `opencode`, `droid` (not in `scripts/spawn.sh` yet) — see `references/more-clis.md`. Windows, WSL, Linux, and macOS.
 
 On native Windows the parent must run `scripts/spawn.sh` through Git Bash (`%ProgramFiles%\Git\bin\bash.exe`) as a **file argument**. WSL `bash.exe` and a PowerShell-quoted `bash -lc` one-liner will not work.
+
+## Test
+
+Git Bash, from a checkout. No extra tools. Does not call real CLIs (dry-run plus PATH-isolated stubs):
+
+```bash
+bash tests/spawn_test.sh
+```
 
 ## License
 
