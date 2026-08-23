@@ -1,6 +1,6 @@
 # harness-subagent
 
-**Dispatch another coding-agent CLI as a one-shot subagent, then synthesize.**
+**Orchestration for coding agents — stay in the parent, outsource to other harnesses, then synthesize.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Agent Skills](https://img.shields.io/badge/Agent%20Skills-compatible-111111)](https://agentskills.io)
@@ -11,21 +11,25 @@
 Ever wanted to call **Codex** from **Claude Code**?  
 Ever wanted **Grok Build** to invoke **Claude Code**?  
 Ever wanted **Claude Code** to send a diff to **GPT** for a second opinion?  
-Ever wanted **Grok Bot** in Cursor to keep working after its quota is gone — by handing the slice to Codex or Claude Code?
+Ever ran out of **Grok Bot** usage after heavy tasks?
 
-That's this skill. It dispatches another coding-agent harness — Claude Code, Codex (GPT), or Grok Build — as a **one-shot subagent**, then the parent synthesizes.
+That's this skill. You have an **orchestrator** — **Grok Bot**, **Cursor Agent** / **cursor-agent**, Claude Code, Codex, whoever you are already in. It writes a brief, dispatches another coding-agent harness as a **one-shot subagent**, then the parent synthesizes.
 
 The other harness is not an oracle. A model reviewing its own work reproduces its own blind spots; a differently-trained harness does not. That worth is destroyed the moment you forward its answer without judging it.
 
-This is a [Claude skill](https://code.claude.com/docs/en/skills) in the [Agent Skills](https://agentskills.io) format. The same protocol works from Cursor (including **Grok Bot**) and any other agent that can run a CLI in the background.
+This is a [Claude skill](https://code.claude.com/docs/en/skills) in the [Agent Skills](https://agentskills.io) format. The same protocol works from Cursor Agent, **cursor-agent**, **Grok Bot** (if that Bot can run a CLI), and any other agent that can run a CLI in the background.
 
 ## Why this exists
 
-I built it as a **collection for Grok Bot**.
+I built it as **orchestration for Grok Bot**.
 
-**Grok Bot** in Cursor is the parent I actually live in. Even on **Cursor Ultra**, its usage limits are tight. When the quota is gone, the session is not — this skill lets Grok Bot **outsource** a bounded slice to another harness that still has budget: Claude Code, Codex, or Grok Build CLI. The Bot writes a brief, the other CLI runs one-shot, the Bot synthesizes. That is the difference between “Grok is rate-limited, stop” and “Grok is rate-limited, keep shipping.”
+**Grok Bot** is Cursor’s persistent-agent product — its own weekly usage meter on your Cursor account. That meter is not Cursor Agent’s Grok 4.6 pool, and it is not Grok Build CLI. It resets weekly. It is drawn down by agent steps and tokens, not by message count: one heavy task can burn a large share of the week, even on Ultra.
 
-The second reason is the same protocol in the other direction: a decorrelated second opinion from a harness that did not write the code. Quota offload and second opinions are one mechanism.
+This skill is how I stop spending that meter on the heavy slice. While the Bot still has usage, it writes a short brief and **outsources** the long run to Claude Code, Codex, or Grok Build CLI (those CLIs bill their own accounts). The Bot synthesizes. That is conservation.
+
+If Grok Bot weekly usage is already gone, the Bot cannot orchestrate. Wait for the weekly reset, use on-demand if you have it, or switch the parent to Cursor Agent / Claude Code / Codex.
+
+**cursor-agent** is a different parent (Cursor’s CLI). Same protocol, separate product from Grok Bot.
 
 ## Why I use it this way
 
@@ -35,7 +39,7 @@ I find **Opus** (Claude Code) superior at **UI work** — layout, interaction, t
 
 So my default loop is: ship the UI with Opus, capture shots, dispatch Codex to confirm or refute, then the parent decides. Not the other way around, and never a paste-through of the subagent's report.
 
-Going the other direction is the same idea. If you are already in Codex or Grok and the job is a UI slice, dispatch Claude Code / Opus to implement it.
+Going the other direction is the same idea. If you are already in Codex or Grok Build and the job is a UI slice, dispatch Claude Code / Opus to implement it.
 
 ## Recommended use
 
@@ -43,20 +47,20 @@ Author defaults (not the protocol):
 
 | Job | I dispatch |
 |---|---|
-| Parent is Grok Bot and the quota is tight | Claude Code, Codex, or Grok Build CLI — bounded slice, then synthesize |
+| Heavy slice while I am still in Grok Bot (save Bot usage) | Claude Code, Codex, or Grok Build CLI — brief, then synthesize |
 | UI implementation, layout, interaction | Claude Code (Opus) |
 | Diff / correctness review | Codex |
 | Visual review (screenshots + named sources) | Codex |
 | Pressure-test a plan (assume it is flawed) | a *different* harness than the one that wrote it |
 | Stuck bug, two fixes already failed | a *different* harness than the parent |
 
-**How to ask** (from whatever agent you are in — including Grok Bot):
+**How to ask** (from whatever agent you are in):
 
-- *Outsource this to Codex — I'm near the Grok Bot limit.*
+- *Orchestrate this — outsource the slice to Codex.*
+- *From Grok Bot: have Claude Code do this UI slice — named paths only.*
 - *Ask Codex to review this diff.*
 - *Get a visual review from Codex of the screenshots I just took.*
-- *Have Claude Code implement this UI slice — named paths only.*
-- *Ask Grok to try to refute this plan.*
+- *Ask Grok Build to try to refute this plan.*
 - *Ask Codex from Claude Code* / *have Grok Build invoke Claude Code.*
 
 **Worth a run:** second opinions, adversarial review of plans, visual confirmation, unstuck diagnosis, a bounded implement slice assigned to that harness.
@@ -74,7 +78,13 @@ If you only paste the subagent's answer, you wasted the run.
 
 ## Install
 
-Clone the **whole directory** (the skill reads `references/` for extra CLIs):
+```bash
+npx skills add ptmrio/harness-subagent -g
+```
+
+That is the [skills.sh](https://skills.sh) installer: one command, copies the whole skill (including `references/`) into the agents on this machine — Cursor Agent, Claude Code, Codex, and the rest the CLI detects. `-g` is user-level, so it is not tied to one repo. Grok Bot is a separate app; it only uses this skill if that Bot can run a CLI and can load the skill (or you point it at `SKILL.md`).
+
+Git clone if you do not want `npx`:
 
 ```bash
 git clone https://github.com/ptmrio/harness-subagent.git ~/.claude/skills/harness-subagent
@@ -86,7 +96,7 @@ Windows PowerShell:
 git clone https://github.com/ptmrio/harness-subagent.git "$HOME\.claude\skills\harness-subagent"
 ```
 
-That path is Claude Code’s personal skills dir. **Cursor also loads `~/.claude/skills/`**, so Grok Bot sees the same copy. Native Cursor path if you prefer: `~/.cursor/skills/harness-subagent`.
+Cursor also loads `~/.claude/skills/`. Native Cursor path if you prefer: `~/.cursor/skills/harness-subagent`.
 
 Already have a checkout? Copy the skill root, not just `SKILL.md`:
 
@@ -96,7 +106,7 @@ cp SKILL.md ~/.claude/skills/harness-subagent/
 cp -r references ~/.claude/skills/harness-subagent/
 ```
 
-Then ask in those words: get a second opinion, pressure-test a plan or diff, or call Codex / Claude Code / Grok as a subagent.
+Then ask in those words: orchestrate this, get a second opinion, pressure-test a plan or diff, or call Codex / Claude Code / Grok as a subagent.
 
 ## Requirements
 
