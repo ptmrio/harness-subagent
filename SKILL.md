@@ -11,7 +11,7 @@ license: MIT
 compatibility: Requires another coding-agent CLI on PATH (claude, codex, grok, and/or cursor-agent). Windows, WSL, Linux, macOS. Git Bash on native Windows.
 metadata:
   author: ptmrio
-  version: "0.1.1"
+  version: "0.1.2"
 ---
 
 # Harness Subagent
@@ -20,7 +20,7 @@ Dispatch **another coding-agent harness** as a one-shot subagent, then synthesiz
 
 **Core principle: the harness is a subagent, not an oracle.** A model reviewing its own work reproduces its own blind spots. That worth is destroyed if you forward the answer without judging it.
 
-Do **not** pick a harness because of a task stereotype (UI vs review vs visual). Routing order: **this utterance → user config → ask once.** Same protocol for every backend.
+Do **not** pick a harness because of a task stereotype unless the **user config** has that key (see [references/user-config.md](references/user-config.md)). Routing order: **this utterance → user config → ask once.** Same protocol for every backend.
 
 Default to **read-only Review**. Allow writes only when the user (or an approved plan) asks for Implement.
 
@@ -33,7 +33,7 @@ Never spawn the **parent’s own family** unless the user named it this turn (Gr
 | Claude, Opus, Fable, ask-claude | `claude` | `opus` (also `fable`, `sonnet`, `haiku`) | `xhigh` | [references/backend-claude.md](references/backend-claude.md) |
 | GPT, Codex, Sol, Terra, Luna, ask-gpt | `codex` | `gpt-5.6-sol` | `xhigh` | [references/backend-codex.md](references/backend-codex.md) |
 | Grok, ask-grok | `grok` | `grok-4.6` | `xhigh` | [references/backend-grok.md](references/backend-grok.md) |
-| Unspecified | User config `defaults.review` / `defaults.implement` if set **and** not the parent family; else ask once. | Config `[models]` / `[effort]`, else table defaults | — | [references/user-config.md](references/user-config.md) |
+| Unspecified | Matching `defaults.*` key in user config (`spec`, `spec-ui`, `plan`, `plan-ui`, `implement`, `implement-ui`, `code-review-task`, `code-review-adversarial`, `code-review-visual`, …) if set **and** not the parent family; else ask once. | Config `[models]` / `[effort]`, else table defaults | — | [references/user-config.md](references/user-config.md) |
 
 If the user pins a model id, use it. Cursor Agent / Gemini / OpenCode / Droid: [references/more-clis.md](references/more-clis.md) (not in `scripts/spawn.sh` yet).
 
@@ -126,7 +126,7 @@ Finish this report even if some checks failed; put gaps under UNVERIFIED.
 ```
 
 Add for read-only Review: `Do not edit application files.`
-Add for Visual: `Do not invent a browser stack. Reason from attached/named screenshots + code.`
+Add for Visual: `Do not invent a browser stack. Reason from attached/named screenshots + code.` **Exception:** user-config key `code-review-visual` — Playwright / live UI is in scope; do not add that forbid line.
 
 #### Implement return contract
 
@@ -150,7 +150,7 @@ Do not load using-superpowers as ceremony — execute the brief.
 | **Unstuck** | a bug two fixes failed to kill | usually no | "Diagnose independently. Do not assume my diagnosis is right." |
 | **Implement** | a bounded slice the user assigned to this harness | **yes** | "Ship the briefed deliverable. Edit only the named paths." |
 
-Config `defaults.review` covers adversarial / critical / visual / unstuck. `defaults.implement` covers Implement. The skill still has no job→harness map.
+Config keys and spawn `--mode`: [references/user-config.md](references/user-config.md). Extra `[defaults]` keys are labels, not inferred. The skill has no author job→harness map.
 
 ### Report back — synthesis, never a paste
 

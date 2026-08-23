@@ -92,7 +92,7 @@ The CLIs do not load this file. The **skill** tells the parent to read it when y
 ~/.config/harness-subagent/config.toml
 ```
 
-Copy `assets/config.example.toml` there, or tell the parent “always use Codex for review.” Override path: `$HARNESS_SUBAGENT_CONFIG`. Schema: `references/user-config.md`.
+Copy `assets/config.example.toml` there (`spec`, `spec-ui`, `plan`, `plan-ui`, `implement`, `implement-ui`, `code-review-task`, `code-review-adversarial`, `code-review-visual`). Override path: `$HARNESS_SUBAGENT_CONFIG`. Schema: `references/user-config.md`.
 
 Git clone if you do not want `npx`:
 

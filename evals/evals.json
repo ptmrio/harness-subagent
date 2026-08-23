@@ -15,7 +15,7 @@
     },
     {
       "id": 2,
-      "prompt": "Orchestrate this — get a second opinion. (~/.config/harness-subagent/config.toml has defaults.review = \"codex\" and models.codex = \"gpt-5.6-sol\". Parent is Grok.)",
+      "prompt": "Orchestrate this — get a second opinion. (~/.config/harness-subagent/config.toml has defaults.code-review-task = \"codex\" and models.codex = \"gpt-5.6-sol\". Parent is Grok.)",
       "expected_output": "Does not ask which harness. Spawns Codex with the pinned model. Does not also spawn grok or claude.",
       "expectations": [
         "Reads user-config.md / the toml before asking",
@@ -48,6 +48,16 @@
       "expectations": [
         "Does not invent a third spawn invocation",
         "Still answers the user's review question from what the parent can see"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Orchestrate this UI slice — the settings sheet layout is wrong. I did not name a harness. (~/.config/harness-subagent/config.toml has defaults.implement-ui = \"claude\" and defaults.code-review-task = \"codex\". Parent is Grok.)",
+      "expected_output": "Spawns Claude with Implement posture (implement-ui), not Codex review. Does not ask which harness.",
+      "expectations": [
+        "Uses defaults.implement-ui, not defaults.code-review-task",
+        "Invokes scripts/spawn.sh --backend claude --mode implement",
+        "Does not spawn grok (parent family)"
       ]
     }
   ]

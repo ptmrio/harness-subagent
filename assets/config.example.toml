@@ -1,9 +1,19 @@
 # Copy to ~/.config/harness-subagent/config.toml
 # See references/user-config.md. Do not put this file inside the skill clone.
+# Values: claude | codex | grok | cursor | gemini | opencode | droid
 
 [defaults]
-review = "codex"
+spec = "claude"
+spec-ui = "claude"
+plan = "claude"
+plan-ui = "claude"
 implement = "claude"
+implement-ui = "claude"
+code-review-task = "codex"
+code-review-adversarial = "codex"
+code-review-visual = "codex"   # Playwright / live UI + shots; spawn --mode visual
+
+# Extra keys are optional named labels. Used only when you say that word this turn.
 
 [models]
 claude = "opus"

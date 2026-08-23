@@ -57,8 +57,7 @@ case "$MODE" in
   review|implement|visual) ;;
   *) die "mode must be review|implement|visual" ;;
 esac
-[[ "$MODE" == "visual" && "$BACKEND" != "codex" ]] && die "visual images are Codex-only in this script"
-[[ "$MODE" == "visual" && "$BACKEND" == "codex" ]] && MODE="review"
+[[ "$MODE" == "visual" ]] && MODE="review"
 
 [[ -d "$PROJECT" ]] || die "project dir not found: $PROJECT"
 [[ -d "$RUN" ]] || die "run dir not found: $RUN"
