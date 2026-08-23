@@ -1,18 +1,17 @@
 ---
 name: harness-subagent
 description: >
-  Use when the user asks to dispatch another coding-agent CLI as a one-shot
-  subagent — Claude Code, Codex, Grok Build, Cursor Agent, Gemini CLI, OpenCode,
-  or Droid — or to ask Claude, ask GPT, ask Codex, ask Grok, get a second
-  opinion, or pressure-test a plan/diff from a different harness.
+  Use when the user asks to orchestrate, outsource, delegate, or hand off a
+  slice to another coding-agent CLI as a one-shot subagent — Claude Code,
+  Codex, Grok Build, Cursor Agent, Gemini CLI, OpenCode, or Droid — or to ask
+  Claude, ask GPT, ask Codex, ask Grok, get a second opinion, or pressure-test
+  a plan or diff from a different harness. Do not use to install those CLIs or
+  to explain their flags.
 license: MIT
-compatibility: Requires another coding-agent CLI on PATH (claude, codex, grok, and/or cursor-agent). Windows, WSL, Linux, macOS.
+compatibility: Requires another coding-agent CLI on PATH (claude, codex, grok, and/or cursor-agent). Windows, WSL, Linux, macOS. Git Bash on native Windows.
 metadata:
   author: ptmrio
-  version: "0.1.0"
-user-invocable: true
-argument-hint: "[claude|codex|grok|cursor|gemini|opencode|droid] [review|implement|…]"
-allowed-tools: Bash Read
+  version: "0.1.1"
 ---
 
 # Harness Subagent
@@ -21,35 +20,44 @@ Dispatch **another coding-agent harness** as a one-shot subagent, then synthesiz
 
 **Core principle: the harness is a subagent, not an oracle.** A model reviewing its own work reproduces its own blind spots. That worth is destroyed if you forward the answer without judging it.
 
-Do **not** pick a harness because of a task stereotype (UI vs review vs visual). The user names the harness, or you ask once. Same protocol for every backend.
+Do **not** pick a harness because of a task stereotype (UI vs review vs visual). Routing order: **this utterance → user config → ask once.** Same protocol for every backend.
 
 Default to **read-only Review**. Allow writes only when the user (or an approved plan) asks for Implement.
 
-Extra CLIs (Cursor Agent, Gemini, OpenCode, Droid): Read `references/more-clis.md` before spawning.
-
 ## Pick a backend
 
-| User says | Binary (PATH) | Default model (latest series) | Default thinking |
-|---|---|---|---|
-| Claude, Opus, Fable, ask-claude | `claude` | `--model opus` (alias = current Opus). Also `fable`, `sonnet`, `haiku` | `--effort xhigh` |
-| GPT, Codex, Sol, Terra, Luna, ask-gpt | `codex` | `-m gpt-5.6-sol` | `-c model_reasoning_effort=xhigh` |
-| Grok, ask-grok | `grok` | `-m grok-4.6` | `--effort xhigh` |
-| Unspecified | Ask once. Do not default. | — | — |
+Never spawn the **parent’s own family** unless the user named it this turn (Grok parent → no `grok`; Claude Code parent → no `claude`; Codex parent → no `codex`). One harness per question unless the user asked for multiple opinions.
 
-If the user pins a model id, use it. Otherwise use the series default in the table.
+| User says | Binary (PATH) | Default model (latest series) | Default thinking | Flags |
+|---|---|---|---|---|
+| Claude, Opus, Fable, ask-claude | `claude` | `opus` (also `fable`, `sonnet`, `haiku`) | `xhigh` | [references/backend-claude.md](references/backend-claude.md) |
+| GPT, Codex, Sol, Terra, Luna, ask-gpt | `codex` | `gpt-5.6-sol` | `xhigh` | [references/backend-codex.md](references/backend-codex.md) |
+| Grok, ask-grok | `grok` | `grok-4.6` | `xhigh` | [references/backend-grok.md](references/backend-grok.md) |
+| Unspecified | User config `defaults.review` / `defaults.implement` if set **and** not the parent family; else ask once. | Config `[models]` / `[effort]`, else table defaults | — | [references/user-config.md](references/user-config.md) |
+
+If the user pins a model id, use it. Cursor Agent / Gemini / OpenCode / Droid: [references/more-clis.md](references/more-clis.md) (not in `scripts/spawn.sh` yet).
 
 **List what this machine actually has:**
 
 ```bash
-claude --help          # --model aliases: opus, fable, sonnet, haiku (no catalog subcommand)
+claude --help
 codex debug models --bundled
 grok models
-cursor-agent --list-models   # see references/more-clis.md
+cursor-agent --list-models
 ```
 
-Windows PowerShell: `Get-Command claude,codex,grok`. Do **not** hardcode `~/.local/bin/…`.
+Windows PowerShell: `Get-Command claude,codex,grok`. Do **not** hardcode `~/.local/bin/…`. **`agent` on PATH is often Grok Build, not Cursor.** Cursor’s CLI is `cursor-agent`.
 
-**`agent` on PATH is often Grok Build, not Cursor.** Cursor’s CLI is `cursor-agent`.
+There is no `harness-spawn` skill. Stale `ask-claude` / `ask-gpt` / `ask-grok` stubs: this skill.
+
+## User config
+
+Optional. Survives skill updates. **Never** store prefs in the skill clone (`npx skills add` fans out into every agent dir).
+
+- If `$HARNESS_SUBAGENT_CONFIG` is set: that file. Missing file → ask once (do not fall through).
+- Else: `${XDG_CONFIG_HOME:-$HOME/.config}/harness-subagent/config.toml`
+
+Schema, search, and “always use X” write path: [references/user-config.md](references/user-config.md). Do not create the file unless the user asked to pin.
 
 ## OS, temp, stdin
 
@@ -58,20 +66,33 @@ Parent agents often pipe stdin. Treat that as hostile.
 | | Linux / macOS / WSL | Windows cmd | Windows PowerShell |
 |---|---|---|---|
 | Run dir | `${TMPDIR:-/tmp}/harness-subagent/<run-id>` | `%TEMP%\harness-subagent\<id>` | `Join-Path $env:TEMP "harness-subagent\<id>"` |
-| Close stdin | `< /dev/null` | `< NUL` | wrap in `cmd /c "… < NUL"` or bash |
-| Codex prompt file | `codex exec … - < brief.md` | same after `cd` to run dir | Git Bash / WSL, or `cmd /c` after `cd` (see Codex) |
+| Spawn | `bash <skill>/scripts/spawn.sh …` | Git Bash on the script path | Git Bash **file argv** (below) — never a double-quoted `-lc` recipe |
 
-The spawn blocks below are **bash** (Git Bash, WSL, macOS, Linux). Native PowerShell cannot do `< file` or `$(cat …)`. Prefer Git Bash or WSL on Windows.
+`cwd` / `-C` / `--cwd` must be a path **that CLI understands** (WSL `/mnt/d/…` vs Windows `D:\…`). Do not mix Windows `claude.exe` into WSL.
 
-`cwd` / `-C` / `--cwd` must be a path **that CLI understands** (WSL `/mnt/d/…` vs Windows `D:\…`). Do not mix Windows `claude.exe` into WSL or assume WSL `~/.local/bin` exists on native Windows.
+Visual screenshots in `$RUN`: Claude and Cursor Agent need `--add-dir "$RUN"`. Grok: copy shots into `<project-dir>`. Codex: `-i` (script `--image`).
 
-Visual screenshots in `$RUN`: Claude and Cursor Agent need `--add-dir "$RUN"` (workspace-scoped Read otherwise misses `/tmp` / `%TEMP%`). Grok has no extra-dir flag — copy shots into `<project-dir>` (or name absolute paths you have verified it can Read). Codex uses `-i`.
+### Windows PowerShell (gotchas — do not skip)
+
+PowerShell expands `$(…)`, `cat`, and `$RUN` **before** bash sees them. A double-quoted `& bash -lc "claude … $(cat $RUN/brief.md) > $RUN/last.md"` will look for `D:\c\Users\…`, write `last.md` to `/`, or pass an empty/flattened prompt. `system32\bash.exe` is WSL — it cannot see `%TEMP%` as `/c/…`.
+
+1. Pin Git Bash: `"$env:ProgramFiles\Git\bin\bash.exe"` (confirm `Test-Path`; do not use WSL bash).
+2. Write `brief.md` with the Write tool (UTF-8). Do **not** `Out-File` / `>` from PowerShell 5.1 (UTF-16LE + NULs).
+3. Run the skill script **as arguments**, background the Shell call (`block_until_ms: 0` in Cursor):
+
+```powershell
+& "$env:ProgramFiles\Git\bin\bash.exe" -- "<skill-dir>\scripts\spawn.sh" --backend claude --mode review --project "D:/Code/app" --run "C:/Users/<you>/AppData/Local/Temp/harness-subagent/<id>"
+```
+
+4. List the run dir with Shell (`Get-ChildItem` / `ls`). Cursor **Glob is workspace-scoped** and will miss `%TEMP%`.
+5. Two failed launches → stop. Answer from parent evidence. Mark the harness UNVERIFIED. Do not invent a third quoting recipe.
 
 ## Shared protocol
 
+0. **Gate.** Name the one thing you cannot answer from this repo / this context. If you cannot name it, do not spawn. Naming, style, formatting, and “already tried” that already is the answer are not worth a run.
 1. Write `brief.md` under the temp run dir (never inside the repo).
-2. Spawn in the **background** (minutes; a foreground timeout kills spend).
-3. Capture report + stderr in that run dir.
+2. Spawn **`scripts/spawn.sh` in the background** (minutes; a foreground timeout kills spend). Do not copy or edit the script.
+3. Wait until the **process exits**. Then read `$RUN/last.md`. Process still running + no `VERDICT` yet → not done. Process exited, `VERDICT` not on line 1 → completed but malformed; strip preamble and use the first `VERDICT` line. Do not relaunch a finished job because of a preamble.
 4. Synthesize — never paste-only.
 
 ### Write the brief
@@ -81,7 +102,7 @@ Task description, not a data dump. **Do not paste diffs or file contents** — n
 - Prefer named files/symbols over “explore the repo.”
 - Diff: exact range, `git diff <A>..<B> -- <paths…>`.
 - Visual/confirm: **forbid** `git log`, full-tree `git diff`, status dumps.
-- Put parent evidence under **What was already tried**. Prefer “verify this” over “rediscover.”
+- Put parent evidence under **What was already tried**. Prefer “verify this” over “rediscover.” If you already ran `gh`/`curl` and Codex Review may lack network, put the output here and forbid re-running those commands.
 - **Product override:** if the user locked a product decision, say so.
 
 Five parts, in order:
@@ -129,7 +150,7 @@ Do not load using-superpowers as ceremony — execute the brief.
 | **Unstuck** | a bug two fixes failed to kill | usually no | "Diagnose independently. Do not assume my diagnosis is right." |
 | **Implement** | a bounded slice the user assigned to this harness | **yes** | "Ship the briefed deliverable. Edit only the named paths." |
 
-Visual: parent provides image paths (any capture method). Copy images into the temp run dir. Codex: `-i` per image before `-o`. Claude / Cursor Agent: `--add-dir "$RUN"` plus named paths. Grok: copy shots into `<project-dir>` (no `--add-dir`). Parent still synthesizes.
+Config `defaults.review` covers adversarial / critical / visual / unstuck. `defaults.implement` covers Implement. The skill still has no job→harness map.
 
 ### Report back — synthesis, never a paste
 
@@ -142,9 +163,9 @@ Cheap-check claims (`file:line` exists; tests actually fail). For Implement: fil
 
 ### Hang / progress hygiene
 
-- Capture stderr to `stderr.log` (not `/dev/null`). Codex transcripts are large — normal, not a hang.
+- Capture stderr to `$RUN/stderr.log` (the script does this). Codex transcripts are large — normal, not a hang.
 - **Do not kill** because stderr is noisy or mentions `git`. Kill only if the process is dead **and** the report file is empty/stale, or there is no growth and no process activity for a long stretch.
-- If a Visual run starts unbounded git: kill, rewrite the brief with the forbid line, relaunch.
+- If a Visual run starts unbounded git: kill, rewrite the brief with the forbid line, relaunch **once**.
 
 ### Red flags
 
@@ -155,174 +176,10 @@ Cheap-check claims (`file:line` exists; tests actually fail). For Implement: fil
 | "It disagrees, so I was wrong" | Decorrelated ≠ correct. |
 | "I'll paste the diff to save it a step" | Named paths + bounded range. |
 | "Harness must be read-only" | Review is; Implement may edit when the brief says so. |
-| "This task wants Codex / Opus / Grok" | User picks the harness. No task map. |
-
-### Not worth a run
-
-Naming, style, formatting, or anything already answerable from context.
-
----
-
-## Backend: Claude Code
-
-Official headless: `claude -p` / `--print`. Do **not** default `--bare` (it skips subscription login; needs `ANTHROPIC_API_KEY`).
-
-### Review
-
-```bash
-cd "<project-dir>" && claude -p --permission-mode plan \
-  --tools "Bash,Read,Glob,Grep" \
-  --output-format text --model opus --effort xhigh \
-  --no-session-persistence --add-dir "$RUN" \
-  "$(cat "$RUN/brief.md")" \
-  < /dev/null > "$RUN/last.md" \
-  2> "$RUN/stderr.log"
-```
-
-### Implement
-
-```bash
-cd "<project-dir>" && claude -p --permission-mode acceptEdits \
-  --tools "Bash,Read,Edit,Write,Glob,Grep" \
-  --output-format text --model opus --effort xhigh \
-  --no-session-persistence --add-dir "$RUN" \
-  "$(cat "$RUN/brief.md")" \
-  < /dev/null > "$RUN/last.md" \
-  2> "$RUN/stderr.log"
-```
-
-Windows: same flags under Git Bash/WSL; close stdin with `< NUL` in cmd. Keep the brief small enough for argv (`"$(cat brief)"` hits ARG_MAX).
-
-| Part | Why |
-|---|---|
-| `-p` | Headless one-shot. Without it you get the TUI. |
-| `--permission-mode plan` | Official: explore, no source edits. |
-| `--permission-mode acceptEdits` | Unattended Implement; still not full bypass. |
-| `--tools` | Explicit surface. Review omits Edit/Write. |
-| `--model opus` | Current Opus series alias. `fable` / `sonnet` / `haiku` or a full id if the user pins. |
-| `--effort xhigh` | `low` `medium` `high` `xhigh` `max`. |
-| `--no-session-persistence` | One-shot; do not clutter resume history. |
-| `--add-dir "$RUN"` | Lets Read see the brief/screenshots outside the project tree. |
-| `< /dev/null` or `< NUL` | Parent shells pipe stdin; Claude may hang on a non-EOF pipe. |
-
-Optional: `--append-system-prompt 'First line of your final report must be: VERDICT — …'`.
-Images: name paths in the brief.
-
-If `last.md` is `You've hit your session limit`, do **not** relaunch Claude immediately — switch backend or wait for the stated reset.
-
----
-
-## Backend: Codex (GPT)
-
-Official: `codex exec`. Prompt from file with `-`. Progress on stderr; final message on stdout. Pin `--sandbox`; user `config.toml` can change approval.
-
-### Review / Visual
-
-```bash
-codex exec --ephemeral --sandbox read-only -m gpt-5.6-sol \
-  -c model_reasoning_effort=xhigh --skip-git-repo-check \
-  -C "<project-dir>" \
-  -o "$RUN/last.md" \
-  - < "$RUN/brief.md"
-```
-
-Visual: add one `-i "$RUN/<shot>"` per image **before** `-o`.
-
-### Implement
-
-```bash
-codex exec --ephemeral --sandbox workspace-write -m gpt-5.6-sol \
-  -c model_reasoning_effort=xhigh --skip-git-repo-check \
-  -C "<project-dir>" \
-  -o "$RUN/last.md" \
-  - < "$RUN/brief.md"
-```
-
-Do **not** use `--full-auto` (deprecated) or `--dangerously-bypass-approvals-and-sandbox` for ordinary Implement.
-
-Windows cmd: `cd` to the run dir first so `brief.md` / `last.md` are relative and unquoted. Do **not** nest `"` around `-C` inside `cmd /c "…"` — that terminates the string. Paths with spaces: use Git Bash.
-
-```bat
-cd /d %TEMP%\harness-subagent\<id>
-cmd /c "codex exec --ephemeral --sandbox read-only -m gpt-5.6-sol -c model_reasoning_effort=xhigh --skip-git-repo-check -C C:\path\to\project -o last.md - < brief.md"
-```
-
-| Part | Why |
-|---|---|
-| `--sandbox read-only` | Review — writes refused. |
-| `--sandbox workspace-write` | Implement — edit inside `-C` only. |
-| `-m gpt-5.6-sol` | Current bundled default series. List: `codex debug models --bundled`. |
-| `-c model_reasoning_effort=xhigh` | `minimal` `low` `medium` `high` `xhigh`. |
-| `--skip-git-repo-check` | Always in this protocol (temp dirs, odd checkouts). |
-| `--ephemeral` | No session files. |
-| `-o` | Last message to file (also printed on stdout). |
-| `- < brief.md` | Official prompt-from-file. Do **not** also pass an argv prompt (duplicate + stdin races). |
-
-`--ignore-user-config` when you must not inherit a drifted `~/.codex/config.toml`. Auth still uses `CODEX_HOME`.
-
-### Codex `review` subcommand
-
-Ranked `P1`–`P3` on a diff, no custom rubric:
-
-```bash
-codex exec -C "<project-dir>" --sandbox read-only -m gpt-5.6-sol \
-  -c model_reasoning_effort=xhigh --ephemeral \
-  review --uncommitted
-```
-
-Shared flags go **before** `review`. Scope: `--uncommitted`, `--base <branch>`, `--commit <sha>`. A scope flag and a custom prompt are mutually exclusive — for instructed review, use plain `codex exec` and a bounded diff in the brief.
-
----
-
-## Backend: Grok Build
-
-Official headless: `-p` / `--prompt-file`. **Does not** treat piped stdin as the prompt. Still close stdin so a parent pipe cannot hang the process.
-
-### Review
-
-```bash
-grok --permission-mode plan -m grok-4.6 --effort xhigh \
-  --cwd "<project-dir>" \
-  --prompt-file "$RUN/brief.md" \
-  --output-format plain \
-  < /dev/null > "$RUN/last.md" \
-  2> "$RUN/stderr.log"
-```
-
-### Implement
-
-```bash
-grok --permission-mode acceptEdits -m grok-4.6 --effort xhigh \
-  --cwd "<project-dir>" \
-  --prompt-file "$RUN/brief.md" \
-  --output-format plain \
-  < /dev/null > "$RUN/last.md" \
-  2> "$RUN/stderr.log"
-```
-
-Strict CI allowlist (official enterprise pattern) instead of `plan`:
-
-```bash
-grok --permission-mode dontAsk --allow Read --allow Grep --allow Glob \
-  --deny 'Bash(rm -rf *)' \
-  --prompt-file "$RUN/brief.md" --output-format plain < /dev/null
-```
-
-| Part | Why |
-|---|---|
-| `--prompt-file` | Official file prompt; implies headless. |
-| `--permission-mode plan` | No source edits. |
-| `--permission-mode acceptEdits` | Unattended edits. |
-| `dontAsk` + `--allow` | Headless deny-by-default; `auto` is a classifier and can block. |
-| `-m grok-4.6` | CLI default. List: `grok models`. |
-| `--effort xhigh` | `none` `minimal` `low` `medium` `high` `xhigh` `max`. |
-| `--output-format plain` | Final text. |
-| `< /dev/null` | Hang insurance. |
-
-Grok often narrates before the verdict and loads process skills — the brief’s “first line = VERDICT” and “do not load process skills” lines are **required**.
-
-Do **not** use `--always-approve` / `bypassPermissions` for routine work. Auth: `grok login` or `XAI_API_KEY`.
-
----
-
-If a local skills dir still has `ask-claude` / `ask-gpt` / `ask-grok` stubs, follow **this** skill with the matching backend instead.
+| "This task wants Codex / Opus / Grok" | Utterance, then config, then ask. No task map. |
+| "Three harnesses is more independent" | One, different family, unless asked for multiple. |
+| "I'll nest the bash recipe in PowerShell -lc" | `scripts/spawn.sh` as file argv. |
+| "Claude got an empty prompt — feed stdin from the parent" | Empty argv is quoting. Use the script (it already files stdin). |
+| "I'll Glob the temp run dir" | Workspace-scoped. Shell `ls`. |
+| "Config says Codex and I am Codex" | Skip same family; ask once if nothing else remains. |
+| "Spawn failed — try another quoting trick" | Two failures then stop. |

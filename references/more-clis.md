@@ -1,8 +1,8 @@
 # Additional harness CLIs
 
-Read this only when the user named one of these backends. The three majors (Claude Code, Codex, Grok Build) are in `SKILL.md`. Recipes below follow vendor headless docs. **Hello-worlded on this author’s machine: Cursor Agent only.** Gemini, OpenCode, and Droid are documented from official sources and must be smoke-tested (`HELLO_WORLD`) on the target machine before you rely on them.
+Read this only when the user named one of these backends. Majors (Claude / Codex / Grok) use [scripts/spawn.sh](../scripts/spawn.sh) and `references/backend-*.md`. Recipes below follow vendor headless docs. **Hello-worlded on this author’s machine: Cursor Agent only.** Gemini, OpenCode, and Droid are documented from official sources and must be smoke-tested (`HELLO_WORLD`) on the target machine before you rely on them.
 
-Same shared protocol as `SKILL.md`: temp brief, background spawn, close stdin unless the CLI’s file-prompt flag *is* stdin, synthesize.
+Same shared protocol as `SKILL.md`. These extras are **not** in `spawn.sh` yet. On Windows PowerShell: Write a tiny `.sh` next to `brief.md` that contains the recipe, then invoke Git Bash with that **file path as argv** (same as `scripts/spawn.sh`). Never nest `"$(cat …)"` or `$RUN` in a PowerShell double-quoted `-lc` string. Prefer file stdin / `--prompt-file` / `-f` over argv `$(cat brief)`.
 
 ## Cursor Agent
 
@@ -15,8 +15,7 @@ List models: `cursor-agent --list-models` (thinking is often in the id, e.g. `gp
 ```bash
 cursor-agent -p --trust --mode ask --output-format text \
   --workspace "<project-dir>" --add-dir "$RUN" \
-  "$(cat "$RUN/brief.md")" \
-  < /dev/null > "$RUN/last.md" \
+  < "$RUN/brief.md" > "$RUN/last.md" \
   2> "$RUN/stderr.log"
 ```
 
@@ -27,8 +26,7 @@ cursor-agent -p --trust --mode ask --output-format text \
 ```bash
 cursor-agent -p --trust --force --output-format text \
   --workspace "<project-dir>" --add-dir "$RUN" \
-  "$(cat "$RUN/brief.md")" \
-  < /dev/null > "$RUN/last.md" \
+  < "$RUN/brief.md" > "$RUN/last.md" \
   2> "$RUN/stderr.log"
 ```
 
@@ -45,7 +43,7 @@ Official: headless when `-p` / `--prompt` is set (or non-TTY). [Headless referen
 `--yolo` is **tool/file approval**, not headless. Combine `-p` with `--yolo` only for Implement. Default `gemini -p` can still edit if the model tries — treat Review as best-effort and smoke-test `HELLO_WORLD` before relying on it.
 
 ```bash
-# Review-ish (do not pass --yolo)
+# Review-ish (do not pass --yolo). Invoke from a .sh file, not PowerShell -lc.
 gemini -p "$(cat "$RUN/brief.md")" --output-format text
 
 # Implement (unattended approval)
@@ -86,4 +84,4 @@ droid exec -f "$RUN/brief.md" --auto medium --output-format text
 
 ## Adding another CLI later
 
-Do not invent flags. Require: vendor headless command, file or argv prompt, read vs write switch, model-list command, binary name on PATH, stdin behavior, one `HELLO_WORLD` smoke on that OS.
+Do not invent flags. Require: vendor headless command, file or argv prompt, read vs write switch, model-list command, binary name on PATH, stdin behavior, one `HELLO_WORLD` smoke on that OS. Prefer adding the binary to `scripts/spawn.sh` over leaving a `$(cat)` recipe.

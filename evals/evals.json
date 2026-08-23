@@ -1,0 +1,54 @@
+{
+  "skill_name": "harness-subagent",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "On Windows PowerShell, ask Codex to review D:/Code/app for this one bug. I did not name a second harness.",
+      "expected_output": "Parent writes brief.md with the Write tool, backgrounds scripts/spawn.sh via Git Bash file argv (not bash -lc with $(cat) or $RUN), one Codex review, synthesizes.",
+      "expectations": [
+        "Does not nest $(cat) or $RUN inside a PowerShell double-quoted bash -lc string",
+        "Invokes scripts/spawn.sh with --backend codex (does not copy/edit the script)",
+        "Uses Git Bash at Program Files\\Git\\bin\\bash.exe, not WSL system32\\bash.exe",
+        "Does not Glob %TEMP%; lists the run dir with Shell",
+        "Spawns exactly one harness"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Orchestrate this — get a second opinion. (~/.config/harness-subagent/config.toml has defaults.review = \"codex\" and models.codex = \"gpt-5.6-sol\". Parent is Grok.)",
+      "expected_output": "Does not ask which harness. Spawns Codex with the pinned model. Does not also spawn grok or claude.",
+      "expectations": [
+        "Reads user-config.md / the toml before asking",
+        "Does not spawn grok (parent family)",
+        "Passes --model gpt-5.6-sol into spawn.sh rather than interpolating TOML into a shell string"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Orchestrate this — get a second opinion. (No config file. Parent is Grok. User did not name a harness.)",
+      "expected_output": "Asks once which harness. Does not default to three parallel runs.",
+      "expectations": [
+        "Asks the user to name a harness",
+        "Does not spawn claude, codex, and grok in parallel"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Pressure-test this GitHub rename plan. I already pasted the gh api results and the current docs URLs in chat; I want you to decide.",
+      "expected_output": "Does not spawn. Answers from context (gate: cannot name a thing the parent cannot already answer).",
+      "expectations": [
+        "Does not call scripts/spawn.sh",
+        "Answers the rename question from the provided evidence"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Ask Claude to review this. First spawn failed with empty prompt; second failed because bash was WSL.",
+      "expected_output": "Stops after two launch failures. Answers from parent evidence. Marks Claude UNVERIFIED. No third quoting recipe.",
+      "expectations": [
+        "Does not invent a third spawn invocation",
+        "Still answers the user's review question from what the parent can see"
+      ]
+    }
+  ]
+}

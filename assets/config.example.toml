@@ -1,0 +1,16 @@
+# Copy to ~/.config/harness-subagent/config.toml
+# See references/user-config.md. Do not put this file inside the skill clone.
+
+[defaults]
+review = "codex"
+implement = "claude"
+
+[models]
+claude = "opus"
+codex = "gpt-5.6-sol"
+grok = "grok-4.6"
+
+[effort]
+claude = "xhigh"
+codex = "xhigh"
+grok = "xhigh"

@@ -33,7 +33,7 @@ If Grok Bot weekly usage is already gone, the Bot cannot orchestrate. Wait for t
 
 ## Why I use it this way
 
-These are **my** defaults, not the protocol. The skill itself will not pick a harness from the job type — you name the CLI, or the parent asks once.
+These are **my** defaults, not the protocol. The skill will not pick a harness from the job type. You name the CLI, or you pin defaults in a **user config file** the parent is instructed to read, or it asks once.
 
 I find **Opus** (Claude Code) superior at **UI work** — layout, interaction, the thing on the screen. I find **GPT / Codex** superior at **reviewing**, especially **visual review**: screenshots plus the named CSS/JS, then a verdict on whether the defect is real.
 
@@ -67,7 +67,7 @@ Author defaults (not the protocol):
 
 **Not worth a run:** naming, style, formatting, or anything the parent can already answer from context.
 
-The parent writes a **bounded brief** (named paths and a tight investigation — not a pasted dump), runs the other CLI in the background, then reports:
+The parent writes a **bounded brief** (named paths and a tight investigation — not a pasted dump), runs `scripts/spawn.sh` in the background, then reports:
 
 1. What was asked
 2. The harness verdict (quoted)
@@ -82,7 +82,17 @@ If you only paste the subagent's answer, you wasted the run.
 npx skills add ptmrio/harness-subagent -g
 ```
 
-That is the [skills.sh](https://skills.sh) installer: one command, copies the whole skill (including `references/`) into the agents on this machine — Cursor Agent, Claude Code, Codex, and the rest the CLI detects. `-g` is user-level, so it is not tied to one repo. Grok Bot is a separate app; it only uses this skill if that Bot can run a CLI and can load the skill (or you point it at `SKILL.md`).
+That is the [skills.sh](https://skills.sh) installer: one command, copies the whole skill (`SKILL.md`, `references/`, `scripts/`, `assets/`, `evals/`) into the agents on this machine — Cursor Agent, Claude Code, Codex, and the rest the CLI detects. `-g` is user-level, so it is not tied to one repo. Grok Bot is a separate app; it only uses this skill if that Bot can run a CLI and can load the skill (or you point it at `SKILL.md`).
+
+### Pin defaults (optional)
+
+The CLIs do not load this file. The **skill** tells the parent to read it when you did not name a harness (utterance → this file → ask once). It lives **outside** the skill clone so updates cannot overwrite it.
+
+```text
+~/.config/harness-subagent/config.toml
+```
+
+Copy `assets/config.example.toml` there, or tell the parent “always use Codex for review.” Override path: `$HARNESS_SUBAGENT_CONFIG`. Schema: `references/user-config.md`.
 
 Git clone if you do not want `npx`:
 
@@ -102,15 +112,17 @@ Already have a checkout? Copy the skill root, not just `SKILL.md`:
 
 ```bash
 mkdir -p ~/.claude/skills/harness-subagent
-cp SKILL.md ~/.claude/skills/harness-subagent/
-cp -r references ~/.claude/skills/harness-subagent/
+cp SKILL.md LICENSE README.md ~/.claude/skills/harness-subagent/
+cp -r references scripts assets evals ~/.claude/skills/harness-subagent/
 ```
 
 Then ask in those words: orchestrate this, get a second opinion, pressure-test a plan or diff, or call Codex / Claude Code / Grok as a subagent.
 
 ## Requirements
 
-At least one of `claude`, `codex`, or `grok` on `PATH` and logged in. Optional extras: `cursor-agent`, `gemini`, `opencode`, `droid` — see `references/more-clis.md`. Windows, WSL, Linux, and macOS; prefer Git Bash or WSL for the spawn recipes (native PowerShell cannot do `< file`).
+At least one of `claude`, `codex`, `grok`, or `cursor-agent` on `PATH` and logged in. Optional extras: `gemini`, `opencode`, `droid` (not in `scripts/spawn.sh` yet) — see `references/more-clis.md`. Windows, WSL, Linux, and macOS.
+
+On native Windows the parent must run `scripts/spawn.sh` through Git Bash (`%ProgramFiles%\Git\bin\bash.exe`) as a **file argument**. WSL `bash.exe` and a PowerShell-quoted `bash -lc` one-liner will not work.
 
 ## License
 
