@@ -11,7 +11,7 @@ license: MIT
 compatibility: Requires another coding-agent CLI on PATH (claude, codex, grok, and/or cursor-agent). Windows, WSL, Linux, macOS. Git Bash on native Windows.
 metadata:
   author: ptmrio
-  version: "0.1.3"
+  version: "0.1.4"
 ---
 
 # Harness Subagent
@@ -33,7 +33,7 @@ Never spawn the **parent’s own family** unless the user named it this turn (Gr
 | Claude, Opus, Fable, ask-claude | `claude` | `opus` (also `fable`, `sonnet`, `haiku`) | `xhigh` | [references/backend-claude.md](references/backend-claude.md) |
 | GPT, Codex, Sol, Terra, Luna, ask-gpt | `codex` | `gpt-5.6-sol` | `xhigh` | [references/backend-codex.md](references/backend-codex.md) |
 | Grok, ask-grok | `grok` | `grok-4.6` | `xhigh` | [references/backend-grok.md](references/backend-grok.md) |
-| Unspecified | Matching `defaults.*` key in user config (`spec`, `spec-ui`, `plan`, `plan-ui`, `implement`, `implement-ui`, `code-review-task`, `code-review-adversarial`, `code-review-visual`, …) if set **and** not the parent family; else ask once. | Config `[models]` / `[effort]`, else table defaults | — | [references/user-config.md](references/user-config.md) |
+| Unspecified | Matching `defaults.*` key in user config (`spec`, `spec-ui`, `plan`, `plan-ui`, `implement`, `implement-ui`, `writer`, `research`, `code-review-task`, `code-review-adversarial`, `code-review-visual`, …) if set **and** (backend not the parent family, or value is self-class); else ask once. | Config `[models]` / `[effort]`, else table defaults | — | [references/user-config.md](references/user-config.md) |
 
 If the user pins a model id, use it. Cursor Agent / Gemini / OpenCode / Droid: [references/more-clis.md](references/more-clis.md) (not in `scripts/spawn.sh` yet).
 
@@ -58,6 +58,8 @@ Optional. Survives skill updates. **Never** store prefs in the skill clone (`npx
 - Else: `${XDG_CONFIG_HOME:-$HOME/.config}/harness-subagent/config.toml`
 
 Schema, search, and “always use X” write path: [references/user-config.md](references/user-config.md). Do not create the file unless the user asked to pin.
+
+If the matched `defaults.*` value is `self`, `orchestrator`, `parent`, or `you`, do the job in this session. Do not write a brief. Do not call `scripts/spawn.sh`. A parent-family backend (`grok` while you are Grok) is **not** self — skip and ask once unless this utterance names that harness.
 
 ## OS, temp, stdin
 
@@ -89,7 +91,7 @@ PowerShell expands `$(…)`, `cat`, and `$RUN` **before** bash sees them. A doub
 
 ## Shared protocol
 
-0. **Gate.** Name the one thing you cannot answer from this repo / this context. If you cannot name it, do not spawn. Naming, style, formatting, and “already tried” that already is the answer are not worth a run.
+0. **Gate.** Name the one thing you cannot answer from this repo / this context. If you cannot name it, do not spawn — **unless this utterance already named a harness** (utterance still wins; `writer=self` does not suppress “Ask Claude to rewrite the README”). Naming, style, formatting, and “already tried” that already is the answer are not worth a run. **Sustained writer/research** (a README rewrite, a competitive lookup) is not “naming”: spawn when the **resolved route** is a CLI.
 1. Write `brief.md` under the temp run dir (never inside the repo).
 2. Spawn **`scripts/spawn.sh` in the background** (minutes; a foreground timeout kills spend). Do not copy or edit the script.
 3. Wait until the **process exits**. Then read `$RUN/last.md`. Process still running + no `VERDICT` yet → not done. Process exited, `VERDICT` not on line 1 → completed but malformed; strip preamble and use the first `VERDICT` line. Do not relaunch a finished job because of a preamble.
@@ -164,8 +166,12 @@ Cheap-check claims (`file:line` exists; tests actually fail). For Implement: fil
 ### Hang / progress hygiene
 
 - Capture stderr to `$RUN/stderr.log` (the script does this). Codex transcripts are large — normal, not a hang.
+- **Done** = `spawn.sh` has exited **and** `$RUN/last.md` exists. Do not treat a missed `AwaitShell` regex (`exit_code`) as done or as a hang — Cursor terminal footers often do not match that pattern.
+- After background spawn: one smoke check (`ls` / `Get-ChildItem` on `$RUN`). Optional notify on stderr `session id:` / `OpenAI Codex` means **started**, not done.
+- One wait sized to expected runtime (Codex review often 5–15 min). Do not poll every two minutes. Process still running + empty `last.md` → not done.
 - **Do not kill** because stderr is noisy or mentions `git`. Kill only if the process is dead **and** the report file is empty/stale, or there is no growth and no process activity for a long stretch.
 - If a Visual run starts unbounded git: kill, rewrite the brief with the forbid line, relaunch **once**.
+- Native Windows: Git Bash file argv. WSL `bash.exe` cannot see `%TEMP%` as `/c/…`. Do not mix them.
 
 ### Red flags
 
@@ -182,4 +188,6 @@ Cheap-check claims (`file:line` exists; tests actually fail). For Implement: fil
 | "Claude got an empty prompt — feed stdin from the parent" | Empty argv is quoting. Use the script (it already files stdin). |
 | "I'll Glob the temp run dir" | Workspace-scoped. Shell `ls`. |
 | "Config says Codex and I am Codex" | Skip same family; ask once if nothing else remains. |
+| "Config says grok and I am Grok, so I'll just do it" | Same-family still asks once. Pin `self` when the orchestrator should do that job. |
+| "AwaitShell missed exit_code — kill or relaunch" | Wait for the process; then read `$RUN/last.md`. |
 | "Spawn failed — try another quoting trick" | Two failures then stop. |

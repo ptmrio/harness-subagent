@@ -59,6 +59,77 @@
         "Invokes scripts/spawn.sh --backend claude --mode implement",
         "Does not spawn grok (parent family)"
       ]
+    },
+    {
+      "id": 7,
+      "prompt": "Orchestrate this — rewrite the public README as sustained prose. I did not name a harness. (Test setup, not a user-said label: config has writer=codex and implement=claude. Parent is Grok.)",
+      "expected_output": "Infers writer from the job sentence. Spawns Codex Implement. Does not use implement=claude. Does not ask which harness.",
+      "expectations": [
+        "Uses defaults.writer, not defaults.implement",
+        "Invokes scripts/spawn.sh --backend codex --mode implement",
+        "Does not treat the setup word writer as an extra-key label the user spoke",
+        "Does not spawn grok (parent family)"
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "Orchestrate this — is there an established product that already does cross-CLI orchestration? I did not name a harness. (Test setup: research=codex, code-review-task=claude. Parent is Grok.)",
+      "expected_output": "Infers research (external lookup, no diff). Spawns Codex Review. Does not use code-review-task.",
+      "expectations": [
+        "Uses defaults.research, not defaults.code-review-task",
+        "Invokes scripts/spawn.sh --backend codex --mode review",
+        "Does not spawn grok (parent family)"
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "Orchestrate this — rewrite the README. I did not name a harness. (Test setup: writer=self, implement=claude. Parent is Grok.)",
+      "expected_output": "Self-class: parent writes in-session. Does not spawn. Does not ask which harness.",
+      "expectations": [
+        "Does not call scripts/spawn.sh",
+        "Does not spawn claude even though implement is claude",
+        "Does the writer work in this session"
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "Orchestrate this UI slice — the settings sheet layout is wrong. I did not name a harness. (Test setup: implement-ui=orchestrator. Parent is Grok.)",
+      "expected_output": "Treats orchestrator as self-class. Parent implements in-session. Does not spawn. Does not ask.",
+      "expectations": [
+        "Treats orchestrator as self-class, not as an unknown token",
+        "Does not call scripts/spawn.sh",
+        "Does not ask which harness"
+      ]
+    },
+    {
+      "id": 11,
+      "prompt": "Ask Claude to rewrite the README. (Test setup: writer=self. Parent is Grok.)",
+      "expected_output": "Utterance wins. Spawns Claude Implement. Does not stay in-session because writer is self.",
+      "expectations": [
+        "Invokes scripts/spawn.sh --backend claude --mode implement",
+        "Does not skip spawn because writer is self"
+      ]
+    },
+    {
+      "id": 12,
+      "prompt": "Orchestrate this — rewrite the README. I did not name a harness. (Test setup: writer=grok. Parent is Grok.)",
+      "expected_output": "Same-family skip. Asks once. Does not spawn grok. Does not silently do the write as implicit self.",
+      "expectations": [
+        "Does not call scripts/spawn.sh",
+        "Does not treat grok as self",
+        "Asks once which harness"
+      ]
+    },
+    {
+      "id": 13,
+      "prompt": "You started Codex via spawn.sh. stderr.log is growing (transcript). last.md is still empty. AwaitShell regex exit_code did not match. The spawn process is still running.",
+      "expected_output": "Not done. Do not kill or relaunch. Wait until spawn.sh exits, then read last.md. Do not treat a missed exit_code regex as failure.",
+      "expectations": [
+        "Does not kill the process",
+        "Does not relaunch Codex",
+        "Waits for process exit then reads $RUN/last.md",
+        "Treats large Codex stderr as normal"
+      ]
     }
   ]
 }

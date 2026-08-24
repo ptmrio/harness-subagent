@@ -87,6 +87,8 @@ expect_die "missing --project" "missing --project" --backend claude --run "$ROOT
 expect_die "missing --run" "missing --run" --backend claude --project "$ROOT"
 expect_die "unknown argument" "unknown argument" --backend claude --project "$ROOT" --run "$ROOT" --nope
 expect_die "invalid backend" "backend must be" --backend cursor --project "$ROOT" --run "$ROOT"
+expect_die "self is not a spawn backend" "backend must be" --backend self --project "$ROOT" --run "$ROOT"
+expect_die "orchestrator is not a spawn backend" "backend must be" --backend orchestrator --project "$ROOT" --run "$ROOT"
 expect_die "invalid mode" "mode must be" --backend claude --mode sideways --project "$ROOT" --run "$ROOT"
 
 for flag in --backend --mode --project --run --model --effort --image; do

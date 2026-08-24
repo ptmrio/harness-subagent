@@ -1,6 +1,8 @@
 # Copy to ~/.config/harness-subagent/config.toml
 # See references/user-config.md. Do not put this file inside the skill clone.
 # Values: claude | codex | grok | cursor | gemini | opencode | droid
+#     or: self | orchestrator | parent | you  (parent does the job; no spawn)
+# These assignments are suggestions. Change them. The skill has no job→harness map.
 
 [defaults]
 spec = "claude"
@@ -9,6 +11,8 @@ plan = "claude"
 plan-ui = "claude"
 implement = "claude"
 implement-ui = "claude"
+writer = "grok"            # sustained prose; suggestion only — not claude
+research = "codex"         # lookup / competitive / current docs
 code-review-task = "codex"
 code-review-adversarial = "codex"
 code-review-visual = "codex"   # Playwright / live UI + shots; spawn --mode visual

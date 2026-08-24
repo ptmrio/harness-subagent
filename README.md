@@ -49,6 +49,8 @@ Author defaults (not the protocol):
 |---|---|
 | Heavy slice while I am still in Grok Bot (save Bot usage) | Claude Code, Codex, or Grok Build CLI — brief, then synthesize |
 | UI implementation, layout, interaction | Claude Code (Opus) |
+| Sustained writing (README, skill copy, About) | Grok Build CLI (name it this turn if the parent is already Grok) |
+| Research (docs, competitive, GitHub inventory) | Codex |
 | Diff / correctness review | Codex |
 | Visual review (screenshots + named sources) | Codex |
 | Pressure-test a plan (assume it is flawed) | a *different* harness than the one that wrote it |
@@ -59,11 +61,12 @@ Author defaults (not the protocol):
 - *Orchestrate this — outsource the slice to Codex.*
 - *From Grok Bot: have Claude Code do this UI slice — named paths only.*
 - *Ask Codex to review this diff.*
+- *Rewrite the README — outsource the prose.*
 - *Get a visual review from Codex of the screenshots I just took.*
 - *Ask Grok Build to try to refute this plan.*
 - *Ask Codex from Claude Code* / *have Grok Build invoke Claude Code.*
 
-**Worth a run:** second opinions, adversarial review of plans, visual confirmation, unstuck diagnosis, a bounded implement slice assigned to that harness.
+**Worth a run:** second opinions, adversarial review of plans, visual confirmation, unstuck diagnosis, sustained writing, research lookups, a bounded implement slice assigned to that harness.
 
 **Not worth a run:** naming, style, formatting, or anything the parent can already answer from context.
 
@@ -92,7 +95,7 @@ The CLIs do not load this file. The **skill** tells the parent to read it when y
 ~/.config/harness-subagent/config.toml
 ```
 
-Copy `assets/config.example.toml` there (`spec`, `spec-ui`, `plan`, `plan-ui`, `implement`, `implement-ui`, `code-review-task`, `code-review-adversarial`, `code-review-visual`). Override path: `$HARNESS_SUBAGENT_CONFIG`. Schema: `references/user-config.md`.
+Copy `assets/config.example.toml` there (`spec`, `plan`, `implement`, `writer`, `research`, `code-review-*`, …). Values may be a CLI or `self` (parent does that job). Override path: `$HARNESS_SUBAGENT_CONFIG`. Schema: `references/user-config.md`.
 
 Git clone if you do not want `npx`:
 
