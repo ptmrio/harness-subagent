@@ -54,6 +54,8 @@ If the matched key’s value is `self`, `orchestrator`, `parent`, or `you`: **do
 
 Do **not** treat a parent-family backend as self. `writer = "grok"` while the parent is Grok still skips and asks once. Pin `self` when the orchestrator should do that job. Name `grok` this turn if you want Grok Build spawned from a Grok parent.
 
+Same for Cursor: `implement = "cursor"` while the parent is Cursor Agent / `cursor-agent` / Grok Bot still skips and asks once. Pin `self` (or `orchestrator` / `parent` / `you`) when this session should do that job. Name `cursor-agent` this turn only if you intend to spawn Cursor’s CLI from a *different* family parent (and then use [more-clis.md](more-clis.md); it is not in `spawn.sh`).
+
 Pass self-class only in the TOML (or when this utterance says the parent should do it). Never `spawn.sh --backend self`.
 
 ### Extra `defaults` keys (not inferred)

@@ -19,4 +19,6 @@ The script feeds the brief as **file stdin** (`< "$RUN/brief.md"`). Multiline ar
 
 Optional: `--append-system-prompt 'First line of your final report must be: VERDICT — …'`. Images: name paths in the brief.
 
+`spawn.sh --image` is ignored for Claude. Copy screenshots into `$RUN`; `--add-dir "$RUN"` is already on the argv. If a gate needs a host binary Git Bash / `--tools` cannot run (e.g. `powershell.exe` on native Windows), the **parent** runs it or the finding stays UNVERIFIED.
+
 If `last.md` is `You've hit your session limit`, do **not** relaunch Claude immediately — switch backend or wait for the stated reset.

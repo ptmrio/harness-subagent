@@ -3,6 +3,7 @@
 # Values: claude | codex | grok | cursor | gemini | opencode | droid
 #     or: self | orchestrator | parent | you  (parent does the job; no spawn)
 # These assignments are suggestions. Change them. The skill has no job→harness map.
+# cursor from a Cursor parent is skipped (same family), not treated as self.
 
 [defaults]
 spec = "claude"
