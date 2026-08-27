@@ -114,15 +114,11 @@ case "$BACKEND" in
       --no-session-persistence --add-dir "$RUN")
     ;;
   codex)
-    if [[ "$MODE" == "implement" ]]; then
-      CMD=(codex exec --ephemeral --approve-for-me -m "$MODEL"
-        -c "model_reasoning_effort=$EFFORT" --skip-git-repo-check
-        -C "$PROJECT")
-    else
-      CMD=(codex exec --ephemeral --sandbox read-only -m "$MODEL"
-        -c "model_reasoning_effort=$EFFORT" --skip-git-repo-check
-        -C "$PROJECT")
-    fi
+    # All modes: --approve-for-me (classifier Auto). Do not pass --sandbox
+    # (0.147 mutex with --approve-for-me; read-only also blocks temp/report writes).
+    CMD=(codex exec --ephemeral --approve-for-me -m "$MODEL"
+      -c "model_reasoning_effort=$EFFORT" --skip-git-repo-check
+      -C "$PROJECT")
     if ((${#IMAGES[@]})); then
       for img in "${IMAGES[@]}"; do
         CMD+=(-i "$img")
@@ -131,13 +127,8 @@ case "$BACKEND" in
     CMD+=(-o "$LAST" -)
     ;;
   grok)
-    if [[ "$MODE" == "implement" ]]; then
-      CMD=(grok --permission-mode auto -m "$MODEL" --effort "$EFFORT"
-        --cwd "$PROJECT" --prompt-file "$BRIEF" --output-format plain)
-    else
-      CMD=(grok --permission-mode auto --sandbox read-only -m "$MODEL" --effort "$EFFORT"
-        --cwd "$PROJECT" --prompt-file "$BRIEF" --output-format plain)
-    fi
+    CMD=(grok --permission-mode auto -m "$MODEL" --effort "$EFFORT"
+      --cwd "$PROJECT" --prompt-file "$BRIEF" --output-format plain)
     ;;
 esac
 

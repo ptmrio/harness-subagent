@@ -11,7 +11,7 @@ license: MIT
 compatibility: Requires another coding-agent CLI on PATH (claude, codex, grok, and/or cursor-agent). Windows, WSL, Linux, macOS. Git Bash on native Windows.
 metadata:
   author: ptmrio
-  version: "0.1.6"
+  version: "0.1.7"
 ---
 
 # Harness Subagent
@@ -22,7 +22,7 @@ Dispatch **another coding-agent harness** as a one-shot subagent, then synthesiz
 
 Do **not** pick a harness because of a task stereotype unless the **user config** has that key (see [references/user-config.md](references/user-config.md)). Routing order: **this utterance → user config → ask once.** Same protocol for every backend.
 
-Default to **read-only Review**. Allow writes only when the user (or an approved plan) asks for Implement.
+Default to **Review** (do not edit application files). Allow application writes only when the user (or an approved plan) asks for Implement. Review and Visual may create temp files and write reports.
 
 ## Pick a backend
 
@@ -95,7 +95,7 @@ PowerShell expands `$(…)`, `cat`, and `$RUN` **before** bash sees them. A doub
 
 If this parent auto-allows only some CLIs, the spawn will block on `bash` / `bash.exe`, this script, or the target backend (`codex`, …). Ask the user to allow those, or use an approval mode that can allow the one spawn. Do not hardcode a machine allowlist.
 
-Spawn pins Auto-equivalent permission: Claude/Grok `--permission-mode auto`. Claude Review omits Edit/Write in `--tools`. Grok Review/visual adds `--sandbox read-only`. Codex Review is `--sandbox read-only` (no `--approve-for-me`: 0.147 `exec` treats those as mutex). Codex Implement is `--approve-for-me` without `--sandbox` (classifier Auto, workspace-write). Do not pass `--ask-for-approval` to `codex exec` (TUI-only; exec rejects it).
+Spawn pins Auto-equivalent permission: Claude/Grok `--permission-mode auto`. Codex all modes `--approve-for-me` (do not also pass `--sandbox`: 0.147 mutex). Claude Review still omits Edit/Write in `--tools` (Bash remains for temp files). Do not pass `--ask-for-approval` to `codex exec` (TUI-only; exec rejects it). App-edit restraint is the brief (`Do not edit application files.`), not a read-only sandbox.
 
 ## Shared protocol
 
@@ -135,7 +135,7 @@ Do not load using-superpowers, requesting-code-review, or other process skills �
 Finish this report even if some checks failed; put gaps under UNVERIFIED.
 ```
 
-Add for read-only Review: `Do not edit application files.`
+Add for Review: `Do not edit application files.` (temp files and the report are allowed.)
 Add for Visual: `Do not invent a browser stack. Reason from attached/named screenshots + code.` **Exception:** user-config key `code-review-visual` — Playwright / live UI is in scope; do not add that forbid line.
 
 #### Implement return contract
@@ -189,7 +189,7 @@ Cheap-check claims (`file:line` exists; tests actually fail). For Implement: fil
 | "I'll paste the response" | Synthesis is the deliverable. |
 | "It disagrees, so I was wrong" | Decorrelated ≠ correct. |
 | "I'll paste the diff to save it a step" | Named paths + bounded range. |
-| "Harness must be read-only" | Review is; Implement may edit when the brief says so. |
+| "Harness must be read-only" | Review must not edit application files; temp/report writes are allowed. Implement may edit when the brief says so. |
 | "This task wants Codex / Opus / Grok" | Utterance, then config, then ask. No task map. |
 | "Three harnesses is more independent" | One, different family, unless asked for multiple. |
 | "I'll nest the bash recipe in PowerShell -lc" | `scripts/spawn.sh` as file argv. |

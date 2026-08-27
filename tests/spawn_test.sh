@@ -203,10 +203,8 @@ assert_one "default mode one permission-mode" "--permission-mode" "$out"
 
 expect_ok "dry-run codex review" \
   --backend codex --mode review --project "$ROOT" --run "$RUN" --dry-run
-assert_one "codex review read-only" "--sandbox read-only" "$out"
-assert_none "codex review no workspace-write" "--sandbox workspace-write" "$out"
-assert_one "codex review one sandbox" "--sandbox" "$out"
-assert_none "codex review no approve-for-me" "--approve-for-me" "$out"
+assert_one "codex review approve-for-me" "--approve-for-me" "$out"
+assert_none "codex review no sandbox" "--sandbox" "$out"
 assert_none "codex review no ask-for-approval" "--ask-for-approval" "$out"
 assert_none "codex review no dangerous bypass" "--dangerously-bypass-approvals-and-sandbox" "$out"
 [[ "$out" == *"-o $RUN/last.md -"* ]] && ok "codex -o before -" || fail_msg "codex -o before - ($out)"
@@ -223,10 +221,8 @@ IMG="$LAST_TMP/shot.png"
 printf 'png' >"$IMG"
 expect_ok "dry-run codex visual images" \
   --backend codex --mode visual --project "$ROOT" --run "$RUN" --image "$IMG" --image "$IMG" --dry-run
-assert_one "visual is read-only" "--sandbox read-only" "$out"
-assert_none "visual no workspace-write" "--sandbox workspace-write" "$out"
-assert_one "visual one sandbox" "--sandbox" "$out"
-assert_none "visual no approve-for-me" "--approve-for-me" "$out"
+assert_one "visual approve-for-me" "--approve-for-me" "$out"
+assert_none "visual no sandbox" "--sandbox" "$out"
 assert_none "visual no ask-for-approval" "--ask-for-approval" "$out"
 # both -i flags before -o
 img_pos="${out%%-o *}"
@@ -242,7 +238,7 @@ assert_one "grok review permission-mode auto" "--permission-mode auto" "$out"
 assert_none "grok review no plan" "--permission-mode plan" "$out"
 assert_none "grok review no acceptEdits" "--permission-mode acceptEdits" "$out"
 assert_one "grok review one permission-mode" "--permission-mode" "$out"
-assert_one "grok review sandbox read-only" "--sandbox read-only" "$out"
+assert_none "grok review no sandbox" "--sandbox" "$out"
 assert_one "grok --prompt-file brief" "--prompt-file $RUN/brief.md" "$out"
 
 expect_ok "dry-run grok implement" \
@@ -259,7 +255,7 @@ assert_one "grok visual permission-mode auto" "--permission-mode auto" "$out"
 assert_none "grok visual no plan" "--permission-mode plan" "$out"
 assert_none "grok visual no acceptEdits" "--permission-mode acceptEdits" "$out"
 assert_one "grok visual one permission-mode" "--permission-mode" "$out"
-assert_one "grok visual sandbox read-only" "--sandbox read-only" "$out"
+assert_none "grok visual no sandbox" "--sandbox" "$out"
 
 expect_ok "dry-run passes --model and --effort" \
   --backend claude --project "$ROOT" --run "$RUN" --model sonnet --effort high --dry-run
@@ -271,8 +267,8 @@ expect_ok "dry-run codex --effort in -c" \
   --backend codex --project "$ROOT" --run "$RUN" --model gpt-5.6-sol --effort xhigh --dry-run
 assert_one "codex model" "-m gpt-5.6-sol" "$out"
 assert_one "codex effort -c" "-c model_reasoning_effort=xhigh" "$out"
-assert_one "codex effort one sandbox" "--sandbox" "$out"
-assert_none "codex default-mode review no approve-for-me" "--approve-for-me" "$out"
+assert_one "codex default-mode review approve-for-me" "--approve-for-me" "$out"
+assert_none "codex default-mode review no sandbox" "--sandbox" "$out"
 
 # --- live PATH stubs (fail closed if stubs missing) ---
 

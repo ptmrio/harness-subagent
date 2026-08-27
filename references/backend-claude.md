@@ -10,7 +10,7 @@ The script feeds the brief as **file stdin** (`< "$RUN/brief.md"`). Multiline ar
 |---|---|
 | `-p` | Headless one-shot. Without it you get the TUI. |
 | `--permission-mode auto` | Classifier verifies, then allows. Review still omits Edit/Write in `--tools`. |
-| `--tools` | Review: `Bash,Read,Glob,Grep`. Implement adds `Edit,Write`. |
+| `--tools` | Review: `Bash,Read,Glob,Grep` (Bash is how Review writes temp files). Implement adds `Edit,Write`. |
 | `--model opus` | Series alias unless the user or config pins. |
 | `--effort xhigh` | `low` `medium` `high` `xhigh` `max`. |
 | `--no-session-persistence` | One-shot; do not clutter resume history. |
