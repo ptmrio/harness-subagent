@@ -1,6 +1,6 @@
 # Backend: Codex (GPT)
 
-Read this after the user (or config) selected Codex. Official: `codex exec`. Prompt from file with `-`. Progress on stderr; final message on stdout. Pin `--sandbox` and `--ask-for-approval never` (`scripts/spawn.sh` does both). Headless `codex exec` defaults to never, but a user `~/.codex/config.toml` can set `on-request` and hang a one-shot. Do **not** use `--full-auto` (deprecated) or `--dangerously-bypass-approvals-and-sandbox` (drops the sandbox). Network still follows Codex sandbox config, not this flag.
+Read this after the user (or config) selected Codex. Official: `codex exec`. Prompt from file with `-`. Progress on stderr; final message on stdout. `codex exec` has no `--ask-for-approval` (that flag is interactive `codex -a`). Pin `--sandbox` and `--approve-for-me` (`scripts/spawn.sh` does both). `--approve-for-me` is automatic review of approval requests, not a sandbox drop. Do **not** use `--full-auto` (deprecated) or `--dangerously-bypass-approvals-and-sandbox`.
 
 Parents must spawn via [scripts/spawn.sh](../scripts/spawn.sh) (`--backend codex --mode review|implement|visual`). Visual: one `--image "$RUN/<shot>"` per screenshot **before** the CLI runs (the script places `-i` before `-o`).
 
@@ -8,6 +8,7 @@ Parents must spawn via [scripts/spawn.sh](../scripts/spawn.sh) (`--backend codex
 |---|---|
 | `--sandbox read-only` | Review — writes refused. |
 | `--sandbox workspace-write` | Implement — edit inside `-C` only. |
+| `--approve-for-me` | Classifier reviews approval requests (not `--ask-for-approval`). |
 | `-m gpt-5.6-sol` | Current bundled default series. List: `codex debug models --bundled`. |
 | `-c model_reasoning_effort=xhigh` | `minimal` `low` `medium` `high` `xhigh`. |
 | `--skip-git-repo-check` | Always in this protocol (temp dirs, odd checkouts). |

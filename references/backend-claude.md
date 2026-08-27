@@ -9,8 +9,7 @@ The script feeds the brief as **file stdin** (`< "$RUN/brief.md"`). Multiline ar
 | Part | Why |
 |---|---|
 | `-p` | Headless one-shot. Without it you get the TUI. |
-| `--permission-mode plan` | Official: explore, no source edits. |
-| `--permission-mode acceptEdits` | Unattended Implement; still not full bypass. |
+| `--permission-mode auto` | Classifier verifies, then allows. Review still omits Edit/Write in `--tools`. |
 | `--tools` | Review: `Bash,Read,Glob,Grep`. Implement adds `Edit,Write`. |
 | `--model opus` | Series alias unless the user or config pins. |
 | `--effort xhigh` | `low` `medium` `high` `xhigh` `max`. |
