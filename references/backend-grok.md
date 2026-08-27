@@ -8,6 +8,7 @@ Parents must spawn via [scripts/spawn.sh](../scripts/spawn.sh) (`--backend grok 
 |---|---|
 | `--prompt-file` | Official file prompt; implies headless. |
 | `--permission-mode auto` | Classifier verifies, then allows. Headless: a blocked tool is reported to the model. |
+| `--sandbox read-only` | Review / visual — spawn.sh pins this. Implement has no `--sandbox` (classifier Auto). |
 | `dontAsk` + `--allow` | Headless deny-by-default. Not the spawn.sh default. |
 | `-m grok-4.6` | CLI default. List: `grok models`. |
 | `--effort xhigh` | `none` `minimal` `low` `medium` `high` `xhigh` `max`. |

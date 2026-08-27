@@ -48,7 +48,7 @@ if has_bin codex; then
     fail_msg "codex exec should reject --ask-for-approval (exit=$ec err=${err//$'\n'/ | })"
   fi
   run_cmd codex exec --approve-for-me --help
-  if [[ "$out" == *"codex exec"* ]]; then
+  if [[ "$ec" -eq 0 && "$out" == *"codex exec"* ]]; then
     ok "codex exec accepts --approve-for-me"
   else
     fail_msg "codex exec --approve-for-me --help (exit=$ec out=${out//$'\n'/ | } err=${err//$'\n'/ | })"

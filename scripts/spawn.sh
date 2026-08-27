@@ -131,8 +131,13 @@ case "$BACKEND" in
     CMD+=(-o "$LAST" -)
     ;;
   grok)
-    CMD=(grok --permission-mode auto -m "$MODEL" --effort "$EFFORT"
-      --cwd "$PROJECT" --prompt-file "$BRIEF" --output-format plain)
+    if [[ "$MODE" == "implement" ]]; then
+      CMD=(grok --permission-mode auto -m "$MODEL" --effort "$EFFORT"
+        --cwd "$PROJECT" --prompt-file "$BRIEF" --output-format plain)
+    else
+      CMD=(grok --permission-mode auto --sandbox read-only -m "$MODEL" --effort "$EFFORT"
+        --cwd "$PROJECT" --prompt-file "$BRIEF" --output-format plain)
+    fi
     ;;
 esac
 

@@ -242,6 +242,7 @@ assert_one "grok review permission-mode auto" "--permission-mode auto" "$out"
 assert_none "grok review no plan" "--permission-mode plan" "$out"
 assert_none "grok review no acceptEdits" "--permission-mode acceptEdits" "$out"
 assert_one "grok review one permission-mode" "--permission-mode" "$out"
+assert_one "grok review sandbox read-only" "--sandbox read-only" "$out"
 assert_one "grok --prompt-file brief" "--prompt-file $RUN/brief.md" "$out"
 
 expect_ok "dry-run grok implement" \
@@ -250,6 +251,7 @@ assert_one "grok implement permission-mode auto" "--permission-mode auto" "$out"
 assert_none "grok implement no plan" "--permission-mode plan" "$out"
 assert_none "grok implement no acceptEdits" "--permission-mode acceptEdits" "$out"
 assert_one "grok implement one permission-mode" "--permission-mode" "$out"
+assert_none "grok implement no sandbox" "--sandbox" "$out"
 
 expect_ok "dry-run grok visual maps to review" \
   --backend grok --mode visual --project "$ROOT" --run "$RUN" --dry-run
@@ -257,6 +259,7 @@ assert_one "grok visual permission-mode auto" "--permission-mode auto" "$out"
 assert_none "grok visual no plan" "--permission-mode plan" "$out"
 assert_none "grok visual no acceptEdits" "--permission-mode acceptEdits" "$out"
 assert_one "grok visual one permission-mode" "--permission-mode" "$out"
+assert_one "grok visual sandbox read-only" "--sandbox read-only" "$out"
 
 expect_ok "dry-run passes --model and --effort" \
   --backend claude --project "$ROOT" --run "$RUN" --model sonnet --effort high --dry-run
