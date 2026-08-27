@@ -206,17 +206,15 @@ expect_ok "dry-run codex review" \
 assert_one "codex review read-only" "--sandbox read-only" "$out"
 assert_none "codex review no workspace-write" "--sandbox workspace-write" "$out"
 assert_one "codex review one sandbox" "--sandbox" "$out"
-assert_one "codex review approve-for-me" "--approve-for-me" "$out"
+assert_none "codex review no approve-for-me" "--approve-for-me" "$out"
 assert_none "codex review no ask-for-approval" "--ask-for-approval" "$out"
 assert_none "codex review no dangerous bypass" "--dangerously-bypass-approvals-and-sandbox" "$out"
 [[ "$out" == *"-o $RUN/last.md -"* ]] && ok "codex -o before -" || fail_msg "codex -o before - ($out)"
 
 expect_ok "dry-run codex implement" \
   --backend codex --mode implement --project "$ROOT" --run "$RUN" --dry-run
-assert_one "codex implement workspace-write" "--sandbox workspace-write" "$out"
-assert_none "codex implement no read-only" "--sandbox read-only" "$out"
-assert_one "codex implement one sandbox" "--sandbox" "$out"
 assert_one "codex implement approve-for-me" "--approve-for-me" "$out"
+assert_none "codex implement no sandbox" "--sandbox" "$out"
 assert_none "codex implement no ask-for-approval" "--ask-for-approval" "$out"
 assert_none "codex implement no dangerous bypass" "--dangerously-bypass-approvals-and-sandbox" "$out"
 
@@ -228,7 +226,7 @@ expect_ok "dry-run codex visual images" \
 assert_one "visual is read-only" "--sandbox read-only" "$out"
 assert_none "visual no workspace-write" "--sandbox workspace-write" "$out"
 assert_one "visual one sandbox" "--sandbox" "$out"
-assert_one "visual approve-for-me" "--approve-for-me" "$out"
+assert_none "visual no approve-for-me" "--approve-for-me" "$out"
 assert_none "visual no ask-for-approval" "--ask-for-approval" "$out"
 # both -i flags before -o
 img_pos="${out%%-o *}"
@@ -271,6 +269,7 @@ expect_ok "dry-run codex --effort in -c" \
 assert_one "codex model" "-m gpt-5.6-sol" "$out"
 assert_one "codex effort -c" "-c model_reasoning_effort=xhigh" "$out"
 assert_one "codex effort one sandbox" "--sandbox" "$out"
+assert_none "codex default-mode review no approve-for-me" "--approve-for-me" "$out"
 
 # --- live PATH stubs (fail closed if stubs missing) ---
 

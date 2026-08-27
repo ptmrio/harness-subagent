@@ -115,13 +115,14 @@ case "$BACKEND" in
     ;;
   codex)
     if [[ "$MODE" == "implement" ]]; then
-      SB="workspace-write"
+      CMD=(codex exec --ephemeral --approve-for-me -m "$MODEL"
+        -c "model_reasoning_effort=$EFFORT" --skip-git-repo-check
+        -C "$PROJECT")
     else
-      SB="read-only"
+      CMD=(codex exec --ephemeral --sandbox read-only -m "$MODEL"
+        -c "model_reasoning_effort=$EFFORT" --skip-git-repo-check
+        -C "$PROJECT")
     fi
-    CMD=(codex exec --ephemeral --sandbox "$SB" --approve-for-me -m "$MODEL"
-      -c "model_reasoning_effort=$EFFORT" --skip-git-repo-check
-      -C "$PROJECT")
     if ((${#IMAGES[@]})); then
       for img in "${IMAGES[@]}"; do
         CMD+=(-i "$img")

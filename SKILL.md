@@ -95,7 +95,7 @@ PowerShell expands `$(…)`, `cat`, and `$RUN` **before** bash sees them. A doub
 
 If this parent auto-allows only some CLIs, the spawn will block on `bash` / `bash.exe`, this script, or the target backend (`codex`, …). Ask the user to allow those, or use an approval mode that can allow the one spawn. Do not hardcode a machine allowlist.
 
-Spawn pins Auto-equivalent permission: Claude/Grok `--permission-mode auto`, Codex `exec --approve-for-me`. Review write-safety is the tools/sandbox split, not `plan` / `acceptEdits`. Do not pass `--ask-for-approval` to `codex exec` (TUI-only; exec rejects it).
+Spawn pins Auto-equivalent permission: Claude/Grok `--permission-mode auto`. Codex Review is `--sandbox read-only` (no `--approve-for-me`: 0.147 `exec` treats those as mutex). Codex Implement is `--approve-for-me` without `--sandbox` (classifier Auto, workspace-write). Do not pass `--ask-for-approval` to `codex exec` (TUI-only; exec rejects it).
 
 ## Shared protocol
 
