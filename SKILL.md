@@ -11,7 +11,7 @@ license: MIT
 compatibility: Requires another coding-agent CLI on PATH (claude, codex, grok, and/or cursor-agent). Windows, WSL, Linux, macOS. Git Bash on native Windows.
 metadata:
   author: ptmrio
-  version: "0.1.4"
+  version: "0.1.5"
 ---
 
 # Harness Subagent
@@ -27,6 +27,8 @@ Default to **read-only Review**. Allow writes only when the user (or an approved
 ## Pick a backend
 
 Never spawn the **parent’s own family** unless the user named it this turn (Grok parent → no `grok`; Claude Code parent → no `claude`; Codex parent → no `codex`). One harness per question unless the user asked for multiple opinions.
+
+Family is the **parent product/CLI**, not the model id. Cursor Agent, `cursor-agent`, and Grok Bot are `cursor` (even when the model is Grok). Grok **Build** CLI is `grok`. Claude Code is `claude`. Codex CLI is `codex`. A Cursor parent with `defaults.implement = "cursor"` skips and asks once — that token is a backend, not `self`. Pin `self` when this session should do the job.
 
 | User says | Binary (PATH) | Default model (latest series) | Default thinking | Flags |
 |---|---|---|---|---|
@@ -70,6 +72,8 @@ Parent agents often pipe stdin. Treat that as hostile.
 | Run dir | `${TMPDIR:-/tmp}/harness-subagent/<run-id>` | `%TEMP%\harness-subagent\<id>` | `Join-Path $env:TEMP "harness-subagent\<id>"` |
 | Spawn | `bash <skill>/scripts/spawn.sh …` | Git Bash on the script path | Git Bash **file argv** (below) — never a double-quoted `-lc` recipe |
 
+Invoke `scripts/spawn.sh` from the skill directory of the **SKILL.md you loaded this turn** (path on the skill header). `npx skills add -g` fans out copies; do not mix `~/.claude/skills`, `~/.cursor/skills`, and `~/.agents/skills` in one session.
+
 `cwd` / `-C` / `--cwd` must be a path **that CLI understands** (WSL `/mnt/d/…` vs Windows `D:\…`). Do not mix Windows `claude.exe` into WSL.
 
 Visual screenshots in `$RUN`: Claude and Cursor Agent need `--add-dir "$RUN"`. Grok: copy shots into `<project-dir>`. Codex: `-i` (script `--image`).
@@ -89,6 +93,8 @@ PowerShell expands `$(…)`, `cat`, and `$RUN` **before** bash sees them. A doub
 4. List the run dir with Shell (`Get-ChildItem` / `ls`). Cursor **Glob is workspace-scoped** and will miss `%TEMP%`.
 5. Two failed launches → stop. Answer from parent evidence. Mark the harness UNVERIFIED. Do not invent a third quoting recipe.
 
+If this parent auto-allows only some CLIs, the spawn will block on `bash` / `bash.exe`, this script, or the target backend (`codex`, …). Ask the user to allow those, or use an approval mode that can allow the one spawn. Do not hardcode a machine allowlist.
+
 ## Shared protocol
 
 0. **Gate.** Name the one thing you cannot answer from this repo / this context. If you cannot name it, do not spawn — **unless this utterance already named a harness** (utterance still wins; `writer=self` does not suppress “Ask Claude to rewrite the README”). Naming, style, formatting, and “already tried” that already is the answer are not worth a run. **Sustained writer/research** (a README rewrite, a competitive lookup) is not “naming”: spawn when the **resolved route** is a CLI.
@@ -103,7 +109,7 @@ Task description, not a data dump. **Do not paste diffs or file contents** — n
 
 - Prefer named files/symbols over “explore the repo.”
 - Diff: exact range, `git diff <A>..<B> -- <paths…>`.
-- Visual/confirm: **forbid** `git log`, full-tree `git diff`, status dumps.
+- Visual/confirm: **forbid** `git log`, full-tree `git diff`, status dumps. `spawn.sh --image` is Codex only. Claude/Grok: copy shots into `$RUN` (Claude already gets `--add-dir "$RUN"`); name the files in the brief.
 - Put parent evidence under **What was already tried**. Prefer “verify this” over “rediscover.” If you already ran `gh`/`curl` and Codex Review may lack network, put the output here and forbid re-running those commands.
 - **Product override:** if the user locked a product decision, say so.
 
@@ -161,14 +167,14 @@ Config keys and spawn `--mode`: [references/user-config.md](references/user-conf
 3. **Where I agree and disagree** — grounded in this codebase.
 4. **My recommendation.**
 
-Cheap-check claims (`file:line` exists; tests actually fail). For Implement: files changed and gates claimed.
+Cheap-check claims (`file:line` exists; tests actually fail). For Implement: files changed and gates claimed. If the child listed a gate as NOT RUN / permission declined / sandbox-blocked, the parent runs that gate or leaves it UNVERIFIED. That is not a pass.
 
 ### Hang / progress hygiene
 
 - Capture stderr to `$RUN/stderr.log` (the script does this). Codex transcripts are large — normal, not a hang.
 - **Done** = `spawn.sh` has exited **and** `$RUN/last.md` exists. Do not treat a missed `AwaitShell` regex (`exit_code`) as done or as a hang — Cursor terminal footers often do not match that pattern.
 - After background spawn: one smoke check (`ls` / `Get-ChildItem` on `$RUN`). Optional notify on stderr `session id:` / `OpenAI Codex` means **started**, not done.
-- One wait sized to expected runtime (Codex review often 5–15 min). Do not poll every two minutes. Process still running + empty `last.md` → not done.
+- One wait sized to expected runtime (Codex review often 5–15 min). Do not poll `last.md` every couple of minutes. Do not start a second `spawn.sh` for the same `--run` while the first process is still alive. Process still running + empty `last.md` → not done.
 - **Do not kill** because stderr is noisy or mentions `git`. Kill only if the process is dead **and** the report file is empty/stale, or there is no growth and no process activity for a long stretch.
 - If a Visual run starts unbounded git: kill, rewrite the brief with the forbid line, relaunch **once**.
 - Native Windows: Git Bash file argv. WSL `bash.exe` cannot see `%TEMP%` as `/c/…`. Do not mix them.
@@ -191,3 +197,6 @@ Cheap-check claims (`file:line` exists; tests actually fail). For Implement: fil
 | "Config says grok and I am Grok, so I'll just do it" | Same-family still asks once. Pin `self` when the orchestrator should do that job. |
 | "AwaitShell missed exit_code — kill or relaunch" | Wait for the process; then read `$RUN/last.md`. |
 | "Spawn failed — try another quoting trick" | Two failures then stop. |
+| "Config says cursor and I am Cursor Agent" | Same-family skip. Pin `self` when the orchestrator should do that job. |
+| "I'll poll last.md until it appears" | One wait sized to runtime. Process + empty last.md = not done. |
+| "I'll call spawn.sh from a different clone than this SKILL.md" | Wrong tree. Use the loaded skill dir. |
