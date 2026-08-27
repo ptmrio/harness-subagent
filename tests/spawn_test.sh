@@ -369,6 +369,60 @@ else
 fi
 brief_eq "$STUBDIR/claude.stdin" "$CRUN/brief.md" "claude consumed brief on stdin"
 
+cat >"$STUBDIR/claude" <<'EOF'
+#!/bin/bash
+set -euo pipefail
+: "${HS_STUB_DIR:?}"
+printf '%s\n' "$@" >"$HS_STUB_DIR/claude.argv"
+cat >"$HS_STUB_DIR/claude.stdin"
+printf '%s\n' 'Using skill…' '' 'VERDICT — done.' 'body'
+EOF
+chmod +x "$STUBDIR/claude"
+
+make_run
+PRUN="$LAST_TMP"
+run_isolated --backend claude --mode review --project "$ROOT" --run "$PRUN"
+first="$(head -n 1 "$PRUN/last.md")"
+if [[ "$ec" -eq 0 && "$first" == "VERDICT — done." ]]; then
+  ok "claude last.md stripped to VERDICT"
+else
+  fail_msg "claude VERDICT strip (exit=$ec first=$first)"
+fi
+
+cat >"$STUBDIR/claude" <<'EOF'
+#!/bin/bash
+set -euo pipefail
+: "${HS_STUB_DIR:?}"
+printf '%s\n' "$@" >"$HS_STUB_DIR/claude.argv"
+cat >/dev/null
+printf '%s\n' 'VERDICT — done.'
+EOF
+chmod +x "$STUBDIR/claude"
+make_run
+QRUN="$LAST_TMP"
+run_isolated --backend claude --mode review --project "$ROOT" --run "$QRUN"
+if [[ "$(cat "$QRUN/last.md")" == "VERDICT — done." ]]; then
+  ok "claude last.md already VERDICT first"
+else
+  fail_msg "claude already VERDICT ($(cat "$QRUN/last.md"))"
+fi
+
+cat >"$STUBDIR/claude" <<'EOF'
+#!/bin/bash
+set -euo pipefail
+cat >/dev/null
+printf '%s\n' 'no verdict in this report'
+EOF
+chmod +x "$STUBDIR/claude"
+make_run
+NRUN="$LAST_TMP"
+run_isolated --backend claude --mode review --project "$ROOT" --run "$NRUN"
+if [[ "$(cat "$NRUN/last.md")" == "no verdict in this report" ]]; then
+  ok "claude last.md unchanged without VERDICT"
+else
+  fail_msg "claude no-VERDICT mutated"
+fi
+
 make_run
 XRUN="$LAST_TMP"
 run_isolated --backend grok --mode review --project "$ROOT" --run "$XRUN"

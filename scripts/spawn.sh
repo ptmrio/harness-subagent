@@ -142,6 +142,20 @@ case "$BACKEND" in
     ;;
 esac
 
+# After a real child exit: drop preamble so last.md starts at VERDICT when present.
+normalize_verdict() {
+  local f="$1" tmp first
+  [[ -s "$f" ]] || return 0
+  first="$(awk 'NF { print; exit }' "$f" || true)"
+  case "$first" in
+    VERDICT|"VERDICT —"*|VERDICT—*|VERDICT\ -*) return 0 ;;
+  esac
+  grep -q '^VERDICT' "$f" || return 0
+  tmp="${f}.norm.$$"
+  awk 'BEGIN{p=0} /^VERDICT/{p=1} p{print}' "$f" >"$tmp"
+  mv "$tmp" "$f"
+}
+
 if [[ "$DRY" -eq 1 ]]; then
   printf 'cd %q &&' "$PROJECT"
   printf ' %q' "${CMD[@]}"
@@ -166,3 +180,5 @@ case "$BACKEND" in
     "${CMD[@]}" < /dev/null > "$LAST" 2> "$ERR"
     ;;
 esac
+
+normalize_verdict "$LAST"
