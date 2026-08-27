@@ -177,7 +177,8 @@ RUN="$LAST_TMP"
 
 expect_ok "dry-run claude review" \
   --backend claude --mode review --project "$ROOT" --run "$RUN" --dry-run
-assert_one "claude review permission-mode plan" "--permission-mode plan" "$out"
+assert_one "claude review permission-mode auto" "--permission-mode auto" "$out"
+assert_none "claude review no plan" "--permission-mode plan" "$out"
 assert_none "claude review no acceptEdits" "--permission-mode acceptEdits" "$out"
 assert_one "claude review one permission-mode" "--permission-mode" "$out"
 assert_one "claude review tools allowlist" "--tools Bash\\,Read\\,Glob\\,Grep" "$out"
@@ -187,14 +188,16 @@ assert_one "claude review --add-dir RUN" "--add-dir $RUN" "$out"
 
 expect_ok "dry-run claude implement" \
   --backend claude --mode implement --project "$ROOT" --run "$RUN" --dry-run
-assert_one "claude implement acceptEdits" "--permission-mode acceptEdits" "$out"
+assert_one "claude implement permission-mode auto" "--permission-mode auto" "$out"
 assert_none "claude implement no plan" "--permission-mode plan" "$out"
+assert_none "claude implement no acceptEdits" "--permission-mode acceptEdits" "$out"
 assert_one "claude implement one permission-mode" "--permission-mode" "$out"
 assert_one "claude implement tools allowlist" "--tools Bash\\,Read\\,Edit\\,Write\\,Glob\\,Grep" "$out"
 
 expect_ok "dry-run claude default mode is review" \
   --backend claude --project "$ROOT" --run "$RUN" --dry-run
-assert_one "default mode plan" "--permission-mode plan" "$out"
+assert_one "default mode auto" "--permission-mode auto" "$out"
+assert_none "default mode no plan" "--permission-mode plan" "$out"
 assert_none "default mode no acceptEdits" "--permission-mode acceptEdits" "$out"
 assert_one "default mode one permission-mode" "--permission-mode" "$out"
 
@@ -203,7 +206,8 @@ expect_ok "dry-run codex review" \
 assert_one "codex review read-only" "--sandbox read-only" "$out"
 assert_none "codex review no workspace-write" "--sandbox workspace-write" "$out"
 assert_one "codex review one sandbox" "--sandbox" "$out"
-assert_one "codex review approval never" "--ask-for-approval never" "$out"
+assert_one "codex review approve-for-me" "--approve-for-me" "$out"
+assert_none "codex review no ask-for-approval" "--ask-for-approval" "$out"
 assert_none "codex review no dangerous bypass" "--dangerously-bypass-approvals-and-sandbox" "$out"
 [[ "$out" == *"-o $RUN/last.md -"* ]] && ok "codex -o before -" || fail_msg "codex -o before - ($out)"
 
@@ -212,7 +216,8 @@ expect_ok "dry-run codex implement" \
 assert_one "codex implement workspace-write" "--sandbox workspace-write" "$out"
 assert_none "codex implement no read-only" "--sandbox read-only" "$out"
 assert_one "codex implement one sandbox" "--sandbox" "$out"
-assert_one "codex implement approval never" "--ask-for-approval never" "$out"
+assert_one "codex implement approve-for-me" "--approve-for-me" "$out"
+assert_none "codex implement no ask-for-approval" "--ask-for-approval" "$out"
 assert_none "codex implement no dangerous bypass" "--dangerously-bypass-approvals-and-sandbox" "$out"
 
 mkwork
@@ -223,6 +228,8 @@ expect_ok "dry-run codex visual images" \
 assert_one "visual is read-only" "--sandbox read-only" "$out"
 assert_none "visual no workspace-write" "--sandbox workspace-write" "$out"
 assert_one "visual one sandbox" "--sandbox" "$out"
+assert_one "visual approve-for-me" "--approve-for-me" "$out"
+assert_none "visual no ask-for-approval" "--ask-for-approval" "$out"
 # both -i flags before -o
 img_pos="${out%%-o *}"
 if [[ "$(n_occ " -i $IMG" "$img_pos")" -eq 2 && "$out" == *"-o $RUN/last.md -"* ]]; then
@@ -233,20 +240,23 @@ fi
 
 expect_ok "dry-run grok review" \
   --backend grok --mode review --project "$ROOT" --run "$RUN" --dry-run
-assert_one "grok review plan" "--permission-mode plan" "$out"
+assert_one "grok review permission-mode auto" "--permission-mode auto" "$out"
+assert_none "grok review no plan" "--permission-mode plan" "$out"
 assert_none "grok review no acceptEdits" "--permission-mode acceptEdits" "$out"
 assert_one "grok review one permission-mode" "--permission-mode" "$out"
 assert_one "grok --prompt-file brief" "--prompt-file $RUN/brief.md" "$out"
 
 expect_ok "dry-run grok implement" \
   --backend grok --mode implement --project "$ROOT" --run "$RUN" --dry-run
-assert_one "grok implement acceptEdits" "--permission-mode acceptEdits" "$out"
+assert_one "grok implement permission-mode auto" "--permission-mode auto" "$out"
 assert_none "grok implement no plan" "--permission-mode plan" "$out"
+assert_none "grok implement no acceptEdits" "--permission-mode acceptEdits" "$out"
 assert_one "grok implement one permission-mode" "--permission-mode" "$out"
 
 expect_ok "dry-run grok visual maps to review" \
   --backend grok --mode visual --project "$ROOT" --run "$RUN" --dry-run
-assert_one "grok visual plan" "--permission-mode plan" "$out"
+assert_one "grok visual permission-mode auto" "--permission-mode auto" "$out"
+assert_none "grok visual no plan" "--permission-mode plan" "$out"
 assert_none "grok visual no acceptEdits" "--permission-mode acceptEdits" "$out"
 assert_one "grok visual one permission-mode" "--permission-mode" "$out"
 

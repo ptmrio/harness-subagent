@@ -105,13 +105,11 @@ CMD=()
 case "$BACKEND" in
   claude)
     if [[ "$MODE" == "implement" ]]; then
-      PERM="acceptEdits"
       TOOLS="Bash,Read,Edit,Write,Glob,Grep"
     else
-      PERM="plan"
       TOOLS="Bash,Read,Glob,Grep"
     fi
-    CMD=(claude -p --permission-mode "$PERM" --tools "$TOOLS"
+    CMD=(claude -p --permission-mode auto --tools "$TOOLS"
       --output-format text --model "$MODEL" --effort "$EFFORT"
       --no-session-persistence --add-dir "$RUN")
     ;;
@@ -121,7 +119,7 @@ case "$BACKEND" in
     else
       SB="read-only"
     fi
-    CMD=(codex exec --ephemeral --sandbox "$SB" --ask-for-approval never -m "$MODEL"
+    CMD=(codex exec --ephemeral --sandbox "$SB" --approve-for-me -m "$MODEL"
       -c "model_reasoning_effort=$EFFORT" --skip-git-repo-check
       -C "$PROJECT")
     if ((${#IMAGES[@]})); then
@@ -132,12 +130,7 @@ case "$BACKEND" in
     CMD+=(-o "$LAST" -)
     ;;
   grok)
-    if [[ "$MODE" == "implement" ]]; then
-      PERM="acceptEdits"
-    else
-      PERM="plan"
-    fi
-    CMD=(grok --permission-mode "$PERM" -m "$MODEL" --effort "$EFFORT"
+    CMD=(grok --permission-mode auto -m "$MODEL" --effort "$EFFORT"
       --cwd "$PROJECT" --prompt-file "$BRIEF" --output-format plain)
     ;;
 esac
