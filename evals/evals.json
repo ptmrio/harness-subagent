@@ -130,6 +130,36 @@
         "Waits for process exit then reads $RUN/last.md",
         "Treats large Codex stderr as normal"
       ]
+    },
+    {
+      "id": 14,
+      "prompt": "Orchestrate this — implement the named slice. I did not name a harness. (Test setup: defaults.implement = \"cursor\". Parent is Cursor Agent / cursor-agent, model grok-4.6.)",
+      "expected_output": "Same-family skip. Asks once. Does not spawn cursor-agent. Does not treat cursor as self. Does not spawn grok just because the model is Grok.",
+      "expectations": [
+        "Does not call scripts/spawn.sh",
+        "Does not treat cursor as self-class",
+        "Asks once which harness",
+        "Does not treat Cursor+Grok-model as Grok Build family"
+      ]
+    },
+    {
+      "id": 15,
+      "prompt": "Ask Codex to review this. (The SKILL.md loaded this turn is ~/.claude/skills/harness-subagent/SKILL.md. ~/.cursor/skills/harness-subagent and ~/.agents/skills/harness-subagent also exist.)",
+      "expected_output": "Invokes ~/.claude/skills/harness-subagent/scripts/spawn.sh. Does not invoke the cursor or agents copies.",
+      "expectations": [
+        "Uses the skill directory of the loaded SKILL.md",
+        "Does not mix clones in one spawn"
+      ]
+    },
+    {
+      "id": 16,
+      "prompt": "You started spawn.sh. The process is still running. last.md is empty. You already did one smoke ls on $RUN.",
+      "expected_output": "One wait sized to expected runtime. Not done. Do not poll last.md every two minutes. Do not start a second spawn.sh with the same --run.",
+      "expectations": [
+        "Does not poll last.md on a short interval",
+        "Does not launch a second spawn for the same run dir",
+        "Does not treat empty last.md as failure while the process lives"
+      ]
     }
   ]
 }
