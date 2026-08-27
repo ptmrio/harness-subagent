@@ -131,10 +131,16 @@ On native Windows the parent must run `scripts/spawn.sh` through Git Bash (`%Pro
 
 ## Test
 
-Git Bash, from a checkout. No extra tools. Does not call real CLIs (dry-run plus PATH-isolated stubs):
+Git Bash, from a checkout. Dry-run plus PATH-isolated stubs (no real CLIs):
 
 ```bash
 bash tests/spawn_test.sh
+```
+
+Real CLIs on PATH: parse Auto flags, then one live `HELLO_WORLD` review per backend:
+
+```bash
+bash tests/hello_world.sh
 ```
 
 ## License
