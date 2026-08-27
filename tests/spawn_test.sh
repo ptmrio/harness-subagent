@@ -203,6 +203,8 @@ expect_ok "dry-run codex review" \
 assert_one "codex review read-only" "--sandbox read-only" "$out"
 assert_none "codex review no workspace-write" "--sandbox workspace-write" "$out"
 assert_one "codex review one sandbox" "--sandbox" "$out"
+assert_one "codex review approval never" "--ask-for-approval never" "$out"
+assert_none "codex review no dangerous bypass" "--dangerously-bypass-approvals-and-sandbox" "$out"
 [[ "$out" == *"-o $RUN/last.md -"* ]] && ok "codex -o before -" || fail_msg "codex -o before - ($out)"
 
 expect_ok "dry-run codex implement" \
@@ -210,6 +212,8 @@ expect_ok "dry-run codex implement" \
 assert_one "codex implement workspace-write" "--sandbox workspace-write" "$out"
 assert_none "codex implement no read-only" "--sandbox read-only" "$out"
 assert_one "codex implement one sandbox" "--sandbox" "$out"
+assert_one "codex implement approval never" "--ask-for-approval never" "$out"
+assert_none "codex implement no dangerous bypass" "--dangerously-bypass-approvals-and-sandbox" "$out"
 
 mkwork
 IMG="$LAST_TMP/shot.png"

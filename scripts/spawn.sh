@@ -121,7 +121,7 @@ case "$BACKEND" in
     else
       SB="read-only"
     fi
-    CMD=(codex exec --ephemeral --sandbox "$SB" -m "$MODEL"
+    CMD=(codex exec --ephemeral --sandbox "$SB" --ask-for-approval never -m "$MODEL"
       -c "model_reasoning_effort=$EFFORT" --skip-git-repo-check
       -C "$PROJECT")
     if ((${#IMAGES[@]})); then

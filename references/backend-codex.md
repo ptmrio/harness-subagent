@@ -1,10 +1,8 @@
 # Backend: Codex (GPT)
 
-Read this after the user (or config) selected Codex. Official: `codex exec`. Prompt from file with `-`. Progress on stderr; final message on stdout. Pin `--sandbox`; user `~/.codex/config.toml` can change approval.
+Read this after the user (or config) selected Codex. Official: `codex exec`. Prompt from file with `-`. Progress on stderr; final message on stdout. Pin `--sandbox` and `--ask-for-approval never` (`scripts/spawn.sh` does both). Headless `codex exec` defaults to never, but a user `~/.codex/config.toml` can set `on-request` and hang a one-shot. Do **not** use `--full-auto` (deprecated) or `--dangerously-bypass-approvals-and-sandbox` (drops the sandbox). Network still follows Codex sandbox config, not this flag.
 
 Parents must spawn via [scripts/spawn.sh](../scripts/spawn.sh) (`--backend codex --mode review|implement|visual`). Visual: one `--image "$RUN/<shot>"` per screenshot **before** the CLI runs (the script places `-i` before `-o`).
-
-Do **not** use `--full-auto` (deprecated) or `--dangerously-bypass-approvals-and-sandbox` for ordinary Implement.
 
 | Part | Why |
 |---|---|
