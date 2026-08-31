@@ -11,7 +11,7 @@ license: MIT
 compatibility: Requires another coding-agent CLI on PATH (claude, codex, grok, agy, and/or cursor-agent). Windows, WSL, Linux, macOS. Git Bash on native Windows.
 metadata:
   author: ptmrio
-  version: "0.1.8"
+  version: "0.1.9"
 ---
 
 # Harness Subagent
@@ -78,7 +78,7 @@ Invoke `scripts/spawn.sh` from the skill directory of the **SKILL.md you loaded 
 
 `cwd` / `-C` / `--cwd` must be a path **that CLI understands** (WSL `/mnt/d/…` vs Windows `D:\…`). Do not mix Windows `claude.exe` into WSL.
 
-Visual screenshots in `$RUN`: Claude, Cursor Agent, and agy need `--add-dir "$RUN"`. Grok: copy shots into `<project-dir>`. Codex: `-i` (script `--image`).
+Visual screenshots in `$RUN`: Claude and Cursor Agent need `--add-dir "$RUN"`. agy Review/Visual too; agy Implement must **not** pass `--add-dir` (it makes `$RUN` a writable workspace). Grok: copy shots into `<project-dir>`. Codex: `-i` (script `--image`).
 
 ### Windows PowerShell (gotchas — do not skip)
 
@@ -171,13 +171,13 @@ Config keys and spawn `--mode`: [references/user-config.md](references/user-conf
 3. **Where I agree and disagree** — grounded in this codebase.
 4. **My recommendation.**
 
-Cheap-check claims (`file:line` exists; tests actually fail). For Implement: files changed and gates claimed. If the child listed a gate as NOT RUN / permission declined / sandbox-blocked, the parent runs that gate or leaves it UNVERIFIED. That is not a pass.
+Cheap-check claims (`file:line` exists; tests actually fail). For Implement: files changed **under `--project`**, not only listed in `last.md`. If `--project` is empty and `$RUN` has the app next to `brief.md`, agy treated `--add-dir` as the workspace (spawn.sh must omit `--add-dir` on Implement). If the child listed a gate as NOT RUN / permission declined / sandbox-blocked, the parent runs that gate or leaves it UNVERIFIED. That is not a pass.
 
 ### Hang / progress hygiene
 
 - Capture stderr to `$RUN/stderr.log` (the script does this). Codex transcripts are large — normal, not a hang.
 - **Done** = `spawn.sh` has exited **and** `$RUN/last.md` exists. Do not treat a missed `AwaitShell` regex (`exit_code`) as done or as a hang — Cursor terminal footers often do not match that pattern.
-- After background spawn: one smoke check (`ls` / `Get-ChildItem` on `$RUN`). Optional notify on stderr `session id:` / `OpenAI Codex` means **started**, not done.
+- After background spawn: one smoke check (`ls` / `Get-ChildItem` on `$RUN`). After **agy Implement** also list `--project` (the app must land there, not in `$RUN`). Optional notify on stderr `session id:` / `OpenAI Codex` means **started**, not done.
 - One wait sized to expected runtime (Codex review often 5–15 min). Do not poll `last.md` every couple of minutes. Do not start a second `spawn.sh` for the same `--run` while the first process is still alive. Process still running + empty `last.md` → not done.
 - **Do not kill** because stderr is noisy or mentions `git`. Kill only if the process is dead **and** the report file is empty/stale, or there is no growth and no process activity for a long stretch.
 - If a Visual run starts unbounded git: kill, rewrite the brief with the forbid line, relaunch **once**.
@@ -204,3 +204,4 @@ Cheap-check claims (`file:line` exists; tests actually fail). For Implement: fil
 | "Config says cursor and I am Cursor Agent" | Same-family skip. Pin `self` when the orchestrator should do that job. |
 | "I'll poll last.md until it appears" | One wait sized to runtime. Process + empty last.md = not done. |
 | "I'll call spawn.sh from a different clone than this SKILL.md" | Wrong tree. Use the loaded skill dir. |
+| "agy last.md says done, the app shipped" | List `--project`. If empty, the files are in `$RUN` (`--add-dir` on Implement). That is not a pass. |

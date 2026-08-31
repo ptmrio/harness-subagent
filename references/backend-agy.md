@@ -12,7 +12,7 @@ Utterance **Gemini** / **Antigravity** / **agy** → this backend. Config token 
 | `--output-format text` | Response on stdout → `last.md`. `json` / `stream-json` wrap the answer; do not redirect those to `last.md` raw. |
 | `--mode accept-edits` | Overrides a persisted `agentMode: plan` (which prepends `/plan` and pollutes a VERDICT brief). Not a read-only sandbox. Headless workspace file R/W is auto-allowed anyway. |
 | `--dangerously-skip-permissions` | Implement only. agy has no classifier Auto; this is `always-proceed` (YOLO). Review omits it: shell is soft-denied (exit 0, notice on stderr). |
-| `--add-dir "$RUN"` | Lets the child see the run dir (brief/screenshots) outside the project tree. |
+| `--add-dir "$RUN"` | Review/Visual only. agy adds the dir to the **writable workspace**. Implement must omit it: the brief is already in `-p`, and `--add-dir` dumps the app into `$RUN`. Proven 2026-08-31 (weather UI): `--project` stayed empty; files appeared next to `brief.md`. |
 | `--print-timeout 15m` | Vendor default is 5m; too short for a real review. |
 | `--disable-slash-commands` | Briefs must not be expanded as `/plan` and friends. |
 | `--effort high` | `low` `medium` `high` only. Map spawn `xhigh` / `max` / `ultra` → `high`. |
@@ -27,4 +27,4 @@ Review is brief-restrained (`Do not edit application files.`). A bounded `git di
 
 List models: `agy models`. Auth: interactive `agy` once (keyring), or `GEMINI_API_KEY` plus `modelProvider: "gemini"` in `~/.gemini/antigravity-cli/settings.json`. Headless with no credentials exits `authentication required` rather than hanging.
 
-Proven: `agy -p` → `HELLO_WORLD` (Windows Git Bash, 1.1.22, 2026-08-31). `--print - < brief.md` did **not** pass the file as the prompt.
+Proven: `agy -p` → `HELLO_WORLD` (Windows Git Bash, 1.1.22, 2026-08-31). `--print - < brief.md` did **not** pass the file as the prompt. Implement with `--add-dir "$RUN"` wrote the app into the temp run dir (same date); spawn.sh now omits `--add-dir` on Implement.

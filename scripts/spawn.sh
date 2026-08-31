@@ -140,8 +140,14 @@ case "$BACKEND" in
     ;;
   agy)
     # Flags before -p. Do not pass --project (that is a Google project id).
-    CMD=(agy --output-format text --add-dir "$RUN" --effort "$EFFORT"
+    # --add-dir makes RUN a writable workspace. Implement must not get it
+    # (2026-08-31 weather UI: app landed in $RUN, --project stayed empty).
+    # Review/Visual still add RUN so screenshots are visible. Brief is in -p.
+    CMD=(agy --output-format text --effort "$EFFORT"
       --print-timeout 15m --disable-slash-commands --mode accept-edits)
+    if [[ "$MODE" != "implement" ]]; then
+      CMD+=(--add-dir "$RUN")
+    fi
     if [[ -n "$MODEL" ]]; then
       CMD+=(--model "$MODEL")
     fi

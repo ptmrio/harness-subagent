@@ -48,7 +48,7 @@ Aliases (same lookup as the target): `review` → `code-review-task`; `ui` → `
 
 The **skill** still has no author job→harness map. These keys are the **user** speaking in advance. `assets/config.example.toml` is a suggestion (`writer = "grok"` there); copy and change it.
 
-`code-review-visual`: do **not** put “forbid a browser stack” in the brief. Name Playwright (or the parent’s shots). Codex: `spawn.sh --mode visual` and `--image` per screenshot. Claude/Grok: `--mode visual` runs as Review (brief: do not edit application files); shots via `--add-dir` / named paths.
+`code-review-visual`: do **not** put “forbid a browser stack” in the brief. Name Playwright (or the parent’s shots). Codex: `spawn.sh --mode visual` and `--image` per screenshot. Claude/agy: `--mode visual` runs as Review (brief: do not edit application files); shots via `--add-dir` / named paths. agy Implement still omits `--add-dir`.
 
 ### Self-class values
 

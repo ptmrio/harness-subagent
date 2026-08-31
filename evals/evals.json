@@ -180,6 +180,16 @@
         "Does not treat config gemini as Antigravity",
         "Uses more-clis.md Gemini CLI recipe or asks once if gemini is dead/missing"
       ]
+    },
+    {
+      "id": 19,
+      "prompt": "agy Implement exited 0. last.md says VERDICT done and lists index.html. --project is empty. $RUN contains index.html next to brief.md.",
+      "expected_output": "Does not treat the app as shipped in --project. Reports files landed in $RUN because --add-dir made RUN a workspace. Not a pass.",
+      "expectations": [
+        "Lists --project and finds it empty",
+        "Does not claim the implement shipped under --project",
+        "Does not copy from $RUN as if that were success"
+      ]
     }
   ]
 }

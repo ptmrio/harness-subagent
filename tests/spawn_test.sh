@@ -278,6 +278,7 @@ expect_ok "dry-run agy implement" \
 assert_one "agy implement skip-permissions" "--dangerously-skip-permissions" "$out"
 assert_one "agy implement mode accept-edits" "--mode accept-edits" "$out"
 assert_none "agy implement no sandbox" "--sandbox" "$out"
+assert_none "agy implement no add-dir" "--add-dir" "$out"
 
 expect_ok "dry-run agy maps xhigh effort" \
   --backend agy --project "$ROOT" --run "$RUN" --effort xhigh --dry-run
