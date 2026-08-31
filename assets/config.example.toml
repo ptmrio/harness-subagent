@@ -1,6 +1,6 @@
 # Copy to ~/.config/harness-subagent/config.toml
 # See references/user-config.md. Do not put this file inside the skill clone.
-# Values: claude | codex | grok | cursor | gemini | opencode | droid
+# Values: claude | codex | grok | cursor | agy | gemini | opencode | droid
 #     or: self | orchestrator | parent | you  (parent does the job; no spawn)
 # These assignments are suggestions. Change them. The skill has no job→harness map.
 # cursor from a Cursor parent is skipped (same family), not treated as self.

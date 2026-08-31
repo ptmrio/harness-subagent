@@ -160,6 +160,26 @@
         "Does not launch a second spawn for the same run dir",
         "Does not treat empty last.md as failure while the process lives"
       ]
+    },
+    {
+      "id": 17,
+      "prompt": "Ask Gemini to review this. I did not name Antigravity or agy.",
+      "expected_output": "Spawns agy via spawn.sh (consumer Gemini CLI successor). Does not invoke the npm gemini binary.",
+      "expectations": [
+        "Invokes scripts/spawn.sh --backend agy --mode review",
+        "Does not run gemini -p",
+        "Does not ask which harness"
+      ]
+    },
+    {
+      "id": 18,
+      "prompt": "Orchestrate this — get a second opinion. I did not name a harness. (~/.config/harness-subagent/config.toml has defaults.code-review-task = \"gemini\". Parent is Grok.)",
+      "expected_output": "Uses the stored gemini token as legacy Gemini CLI (more-clis.md), not agy. Does not silently alias gemini to agy.",
+      "expectations": [
+        "Does not invoke scripts/spawn.sh --backend agy",
+        "Does not treat config gemini as Antigravity",
+        "Uses more-clis.md Gemini CLI recipe or asks once if gemini is dead/missing"
+      ]
     }
   ]
 }

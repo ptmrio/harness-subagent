@@ -1,8 +1,8 @@
 # Additional harness CLIs
 
-Read this only when the user named one of these backends. Majors (Claude / Codex / Grok) use [scripts/spawn.sh](../scripts/spawn.sh) and `references/backend-*.md`. Recipes below follow vendor headless docs. **Hello-worlded on this author’s machine: Cursor Agent only.** Gemini, OpenCode, and Droid are documented from official sources and must be smoke-tested (`HELLO_WORLD`) on the target machine before you rely on them.
+Read this only when the user named one of these backends. Majors (Claude / Codex / Grok / agy) use [scripts/spawn.sh](../scripts/spawn.sh) and `references/backend-*.md`. Recipes below follow vendor headless docs. **Hello-worlded on this author’s machine: Cursor Agent and agy (Windows, 2026-08-31).** OpenCode and Droid are documented from official sources and must be smoke-tested (`HELLO_WORLD`) on the target machine before you rely on them.
 
-Same shared protocol as `SKILL.md`. These extras are **not** in `spawn.sh` yet. On Windows PowerShell: Write a tiny `.sh` next to `brief.md` that contains the recipe, then invoke Git Bash with that **file path as argv** (same as `scripts/spawn.sh`). Never nest `"$(cat …)"` or `$RUN` in a PowerShell double-quoted `-lc` string. Prefer file stdin / `--prompt-file` / `-f` over argv `$(cat brief)`.
+Same shared protocol as `SKILL.md`. These extras are **not** in `spawn.sh`. On Windows PowerShell: Write a tiny `.sh` next to `brief.md` that contains the recipe, then invoke Git Bash with that **file path as argv** (same as `scripts/spawn.sh`). Never nest `"$(cat …)"` or `$RUN` in a PowerShell double-quoted `-lc` string. Prefer file stdin / `--prompt-file` / `-f` over argv `$(cat brief)`.
 
 ## Cursor Agent
 
@@ -36,11 +36,11 @@ Images: put paths in the prompt; `--add-dir "$RUN"` if shots live in the temp ru
 
 Proven: `cursor-agent -p --mode ask` → `HELLO_WORLD` (Windows, 2026-08-23). `--trust` / `--add-dir` are from current `--help` (same date); wrap stdin/stdout like the majors.
 
-## Gemini CLI
+## Legacy Gemini CLI
 
-Official: headless when `-p` / `--prompt` is set (or non-TTY). [Headless reference](https://github.com/google-gemini/gemini-cli/blob/main/docs/cli/headless.md).
+Consumer Gemini CLI stopped serving individuals on 2026-06-18 (`IneligibleTierError` / migrate to Antigravity). The spawn backend is **`agy`** ([backend-agy.md](backend-agy.md), `scripts/spawn.sh --backend agy`).
 
-`--yolo` is **tool/file approval**, not headless. Combine `-p` with `--yolo` only for Implement. Default `gemini -p` can still edit if the model tries — treat Review as best-effort and smoke-test `HELLO_WORLD` before relying on it.
+`gemini` remains a **separate** config token and family for Standard/Enterprise or paid Gemini API keys. Do not alias stored `gemini` to `agy`. Official: [Headless reference](https://github.com/google-gemini/gemini-cli/blob/main/docs/cli/headless.md). Not hello-worlded here (consumer `gemini -p` exited 55 on 2026-08-31).
 
 ```bash
 # Review-ish (do not pass --yolo). Invoke from a .sh file, not PowerShell -lc.
@@ -50,7 +50,7 @@ gemini -p "$(cat "$RUN/brief.md")" --output-format text
 gemini --yolo -p "$(cat "$RUN/brief.md")"
 ```
 
-List/pin models from `gemini --help` on that install. Not hello-worlded here (`gemini` was not on PATH).
+If `gemini -p` fails with `UNSUPPORTED_CLIENT`, spawn `agy` instead (utterance “Gemini” already routes there).
 
 ## OpenCode
 

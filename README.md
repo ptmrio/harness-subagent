@@ -125,7 +125,7 @@ Then ask in those words: orchestrate this, get a second opinion, pressure-test a
 
 ## Requirements
 
-At least one of `claude`, `codex`, `grok`, or `cursor-agent` on `PATH` and logged in. Optional extras: `gemini`, `opencode`, `droid` (not in `scripts/spawn.sh` yet) — see `references/more-clis.md`. Windows, WSL, Linux, and macOS.
+At least one of `claude`, `codex`, `grok`, `agy`, or `cursor-agent` on `PATH` and logged in. Optional extras: `gemini` (legacy / enterprise), `opencode`, `droid` (not in `scripts/spawn.sh`) — see `references/more-clis.md`. Windows, WSL, Linux, and macOS.
 
 On native Windows the parent must run `scripts/spawn.sh` through Git Bash (`%ProgramFiles%\Git\bin\bash.exe`) as a **file argument**. WSL `bash.exe` and a PowerShell-quoted `bash -lc` one-liner will not work.
 

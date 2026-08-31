@@ -257,6 +257,40 @@ assert_none "grok visual no acceptEdits" "--permission-mode acceptEdits" "$out"
 assert_one "grok visual one permission-mode" "--permission-mode" "$out"
 assert_none "grok visual no sandbox" "--sandbox" "$out"
 
+expect_ok "dry-run agy review" \
+  --backend agy --mode review --project "$ROOT" --run "$RUN" --dry-run
+assert_one "agy review mode accept-edits" "--mode accept-edits" "$out"
+assert_none "agy review no plan mode" "--mode plan" "$out"
+assert_none "agy review no skip-permissions" "--dangerously-skip-permissions" "$out"
+assert_none "agy review no sandbox" "--sandbox" "$out"
+assert_none "agy review no --project flag" " --project " "$out"
+assert_one "agy review add-dir RUN" "--add-dir $RUN" "$out"
+assert_one "agy review print-timeout" "--print-timeout 15m" "$out"
+assert_one "agy review disable-slash" "--disable-slash-commands" "$out"
+assert_one "agy review output text" "--output-format text" "$out"
+assert_one "agy review effort high" "--effort high" "$out"
+assert_none "agy review unpinned no --model" "--model " "$out"
+[[ "$out" == *"-p \"\$(cat $RUN/brief.md)\""* ]] && ok "agy review -p cat brief" \
+  || fail_msg "agy review -p cat brief ($out)"
+
+expect_ok "dry-run agy implement" \
+  --backend agy --mode implement --project "$ROOT" --run "$RUN" --dry-run
+assert_one "agy implement skip-permissions" "--dangerously-skip-permissions" "$out"
+assert_one "agy implement mode accept-edits" "--mode accept-edits" "$out"
+assert_none "agy implement no sandbox" "--sandbox" "$out"
+
+expect_ok "dry-run agy maps xhigh effort" \
+  --backend agy --project "$ROOT" --run "$RUN" --effort xhigh --dry-run
+assert_one "agy xhigh becomes high" "--effort high" "$out"
+assert_none "agy xhigh not forwarded" "--effort xhigh" "$out"
+
+expect_ok "dry-run agy pinned model" \
+  --backend agy --project "$ROOT" --run "$RUN" --model gemini-3.7-flash-high --dry-run
+assert_one "agy pinned model" "--model gemini-3.7-flash-high" "$out"
+
+expect_die "gemini is not a spawn backend" "backend must be" \
+  --backend gemini --project "$ROOT" --run "$RUN" --dry-run
+
 expect_ok "dry-run passes --model and --effort" \
   --backend claude --project "$ROOT" --run "$RUN" --model sonnet --effort high --dry-run
 assert_one "model sonnet" "--model sonnet" "$out"
@@ -327,7 +361,10 @@ echo CODEX_MARKER >"$out"
 echo CODEX_STDOUT
 EOF
 
-chmod +x "$STUBDIR/claude" "$STUBDIR/codex" "$STUBDIR/grok"
+write_stub_common agy
+printf '%s\n' 'echo AGY_MARKER' >>"$STUBDIR/agy"
+
+chmod +x "$STUBDIR/claude" "$STUBDIR/codex" "$STUBDIR/grok" "$STUBDIR/agy"
 
 ORIG_PATH="$PATH"
 isolated_bin() {
@@ -344,6 +381,7 @@ isolated_bin() {
 isolated_bin claude
 isolated_bin codex
 isolated_bin grok
+isolated_bin agy
 
 run_isolated() {
   local outf errf
@@ -460,6 +498,31 @@ else
   fail_msg "codex live last.md (exit=$ec last=$(cat "$DRUN/last.md" 2>/dev/null || true) err=$err)"
 fi
 brief_eq "$STUBDIR/codex.stdin" "$DRUN/brief.md" "codex consumed brief on stdin"
+
+make_run
+ARUN="$LAST_TMP"
+run_isolated --backend agy --mode review --project "$ROOT" --run "$ARUN"
+if [[ "$ec" -eq 0 && "$(cat "$ARUN/last.md")" == "AGY_MARKER" && -f "$ARUN/stderr.log" ]]; then
+  ok "agy live last.md + stderr.log"
+else
+  fail_msg "agy live last.md (exit=$ec last=$(cat "$ARUN/last.md" 2>/dev/null || true) err=$err)"
+fi
+if [[ ! -s "$STUBDIR/agy.stdin" ]]; then
+  ok "agy stdin empty"
+else
+  fail_msg "agy stdin not empty"
+fi
+if grep -qx -- "-p" "$STUBDIR/agy.argv" \
+  && grep -qx -- "$(cat "$ARUN/brief.md")" "$STUBDIR/agy.argv"; then
+  ok "agy argv -p is brief.md contents"
+else
+  fail_msg "agy argv -p ($(cat "$STUBDIR/agy.argv"))"
+fi
+if grep -qx -- "--dangerously-skip-permissions" "$STUBDIR/agy.argv"; then
+  fail_msg "agy review passed skip-permissions"
+else
+  ok "agy review omitted skip-permissions"
+fi
 
 echo
 echo "passed=$pass failed=$fail"

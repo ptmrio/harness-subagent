@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Spawn a one-shot harness subagent. Parents must invoke this file, not copy it.
-# Usage: spawn.sh --backend claude|codex|grok [--mode review|implement|visual] \
+# Usage: spawn.sh --backend claude|codex|grok|agy [--mode review|implement|visual] \
 #                 --project DIR --run DIR [--model TOKEN] [--effort TOKEN] [--image PATH]...
 set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: spawn.sh --backend claude|codex|grok [--mode review|implement|visual] \
+Usage: spawn.sh --backend claude|codex|grok|agy [--mode review|implement|visual] \
                 --project DIR --run DIR [--model TOKEN] [--effort TOKEN] [--image PATH]...
                 [--dry-run] [--help]
 
@@ -56,8 +56,8 @@ done
 [[ -n "$RUN" ]] || die "missing --run"
 
 case "$BACKEND" in
-  claude|codex|grok) ;;
-  *) die "backend must be claude|codex|grok (extra CLIs: see references/more-clis.md)" ;;
+  claude|codex|grok|agy) ;;
+  *) die "backend must be claude|codex|grok|agy (extra CLIs: see references/more-clis.md)" ;;
 esac
 case "$MODE" in
   review|implement|visual) ;;
@@ -96,6 +96,14 @@ case "$BACKEND" in
     MODEL="${MODEL:-grok-4.6}"
     EFFORT="${EFFORT:-xhigh}"
     ;;
+  agy)
+    # Vendor default model unless pinned. Effort is low|medium|high only.
+    MODEL="${MODEL:-}"
+    EFFORT="${EFFORT:-high}"
+    case "$EFFORT" in
+      xhigh|max|ultra) EFFORT="high" ;;
+    esac
+    ;;
 esac
 
 LAST="$RUN/last.md"
@@ -130,6 +138,17 @@ case "$BACKEND" in
     CMD=(grok --permission-mode auto -m "$MODEL" --effort "$EFFORT"
       --cwd "$PROJECT" --prompt-file "$BRIEF" --output-format plain)
     ;;
+  agy)
+    # Flags before -p. Do not pass --project (that is a Google project id).
+    CMD=(agy --output-format text --add-dir "$RUN" --effort "$EFFORT"
+      --print-timeout 15m --disable-slash-commands --mode accept-edits)
+    if [[ -n "$MODEL" ]]; then
+      CMD+=(--model "$MODEL")
+    fi
+    if [[ "$MODE" == "implement" ]]; then
+      CMD+=(--dangerously-skip-permissions)
+    fi
+    ;;
 esac
 
 # After a real child exit: drop preamble so last.md starts at VERDICT when present.
@@ -153,6 +172,7 @@ if [[ "$DRY" -eq 1 ]]; then
     claude) printf ' < %q > %q 2> %q' "$BRIEF" "$LAST" "$ERR" ;;
     codex) printf ' < %q 2> %q' "$BRIEF" "$ERR" ;;
     grok) printf ' < /dev/null > %q 2> %q' "$LAST" "$ERR" ;;
+    agy) printf ' -p "$(cat %q)" < /dev/null > %q 2> %q' "$BRIEF" "$LAST" "$ERR" ;;
   esac
   printf '\n'
   exit 0
@@ -168,6 +188,9 @@ case "$BACKEND" in
     ;;
   grok)
     "${CMD[@]}" < /dev/null > "$LAST" 2> "$ERR"
+    ;;
+  agy)
+    "${CMD[@]}" -p "$(cat "$BRIEF")" < /dev/null > "$LAST" 2> "$ERR"
     ;;
 esac
 

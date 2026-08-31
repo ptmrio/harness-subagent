@@ -1,0 +1,30 @@
+# Backend: Antigravity CLI (`agy`)
+
+Read this after the user (or config) selected Antigravity / `agy`. Consumer **Gemini CLI** (`gemini` on npm) stopped serving individuals on 2026-06-18; the successor binary is **`agy`**. Official headless: [Headless mode](https://antigravity.google/docs/cli/headless/).
+
+Parents must spawn via [scripts/spawn.sh](../scripts/spawn.sh) (`--backend agy --mode review|implement`). Do not assemble these flags in PowerShell. Do not spawn `agy` from an Antigravity parent unless the user named it this turn.
+
+Utterance **Gemini** / **Antigravity** / **agy** → this backend. Config token `gemini` is **not** an alias; that is the legacy CLI in [more-clis.md](more-clis.md) (enterprise / paid API keys).
+
+| Part | Why |
+|---|---|
+| `-p` / `--print` / `--prompt` | Headless one-shot. Without it you get the TUI. Prompt is argv (`-p "$(cat "$BRIEF")"` inside spawn.sh). No `--prompt-file`. `--print -` plus stdin is **not** the prompt (live: it ignored the file). |
+| `--output-format text` | Response on stdout → `last.md`. `json` / `stream-json` wrap the answer; do not redirect those to `last.md` raw. |
+| `--mode accept-edits` | Overrides a persisted `agentMode: plan` (which prepends `/plan` and pollutes a VERDICT brief). Not a read-only sandbox. Headless workspace file R/W is auto-allowed anyway. |
+| `--dangerously-skip-permissions` | Implement only. agy has no classifier Auto; this is `always-proceed` (YOLO). Review omits it: shell is soft-denied (exit 0, notice on stderr). |
+| `--add-dir "$RUN"` | Lets the child see the run dir (brief/screenshots) outside the project tree. |
+| `--print-timeout 15m` | Vendor default is 5m; too short for a real review. |
+| `--disable-slash-commands` | Briefs must not be expanded as `/plan` and friends. |
+| `--effort high` | `low` `medium` `high` only. Map spawn `xhigh` / `max` / `ultra` → `high`. |
+| omit `--model` | Vendor default unless the user or `[models].agy` pins a slug (`agy models`). Unknown slugs fail loud. |
+| `< /dev/null` | `-p` is the prompt; close inherited stdin. |
+| no `--sandbox` | Same as Codex/Grok spawn. |
+| no `--project` | That flag is a Google project id/name, not the repo path. `cd "$PROJECT"` instead. |
+
+`--mode plan` is wrong for Review: it prepends `/plan`. `--mode accept-edits` is not a shell grant; `run_command` still follows permissions.
+
+Review is brief-restrained (`Do not edit application files.`). A bounded `git diff` in the brief may be soft-denied; treat that as UNVERIFIED unless stderr shows the command ran.
+
+List models: `agy models`. Auth: interactive `agy` once (keyring), or `GEMINI_API_KEY` plus `modelProvider: "gemini"` in `~/.gemini/antigravity-cli/settings.json`. Headless with no credentials exits `authentication required` rather than hanging.
+
+Proven: `agy -p` → `HELLO_WORLD` (Windows Git Bash, 1.1.22, 2026-08-31). `--print - < brief.md` did **not** pass the file as the prompt.

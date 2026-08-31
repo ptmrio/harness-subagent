@@ -3,15 +3,15 @@ name: harness-subagent
 description: >
   Use when the user asks to orchestrate, outsource, delegate, or hand off a
   slice to another coding-agent CLI as a one-shot subagent — Claude Code,
-  Codex, Grok Build, Cursor Agent, Gemini CLI, OpenCode, or Droid — or to ask
-  Claude, ask GPT, ask Codex, ask Grok, get a second opinion, or pressure-test
+  Codex, Grok Build, Cursor Agent, Antigravity CLI, Gemini CLI, OpenCode, or Droid — or to ask
+  Claude, ask GPT, ask Codex, ask Grok, ask Gemini, get a second opinion, or pressure-test
   a plan or diff from a different harness. Do not use to install those CLIs or
   to explain their flags.
 license: MIT
-compatibility: Requires another coding-agent CLI on PATH (claude, codex, grok, and/or cursor-agent). Windows, WSL, Linux, macOS. Git Bash on native Windows.
+compatibility: Requires another coding-agent CLI on PATH (claude, codex, grok, agy, and/or cursor-agent). Windows, WSL, Linux, macOS. Git Bash on native Windows.
 metadata:
   author: ptmrio
-  version: "0.1.7"
+  version: "0.1.8"
 ---
 
 # Harness Subagent
@@ -26,18 +26,19 @@ Default to **Review** (do not edit application files). Allow application writes 
 
 ## Pick a backend
 
-Never spawn the **parent’s own family** unless the user named it this turn (Grok parent → no `grok`; Claude Code parent → no `claude`; Codex parent → no `codex`). One harness per question unless the user asked for multiple opinions.
+Never spawn the **parent’s own family** unless the user named it this turn (Grok parent → no `grok`; Claude Code parent → no `claude`; Codex parent → no `codex`; Antigravity parent → no `agy`). One harness per question unless the user asked for multiple opinions.
 
-Family is the **parent product/CLI**, not the model id. Cursor Agent, `cursor-agent`, and Grok Bot are `cursor` (even when the model is Grok). Grok **Build** CLI is `grok`. Claude Code is `claude`. Codex CLI is `codex`. A Cursor parent with `defaults.implement = "cursor"` skips and asks once — that token is a backend, not `self`. Pin `self` when this session should do the job.
+Family is the **parent product/CLI**, not the model id. Cursor Agent, `cursor-agent`, and Grok Bot are `cursor` (even when the model is Grok). Grok **Build** CLI is `grok`. Claude Code is `claude`. Codex CLI is `codex`. Antigravity CLI is `agy`. Legacy Gemini CLI is `gemini` (a different family; do not treat it as `agy`). A Cursor parent with `defaults.implement = "cursor"` skips and asks once — that token is a backend, not `self`. Pin `self` when this session should do the job.
 
 | User says | Binary (PATH) | Default model (latest series) | Default thinking | Flags |
 |---|---|---|---|---|
 | Claude, Opus, Fable, ask-claude | `claude` | `opus` (also `fable`, `sonnet`, `haiku`) | `xhigh` | [references/backend-claude.md](references/backend-claude.md) |
 | GPT, Codex, Sol, Terra, Luna, ask-gpt | `codex` | `gpt-5.6-sol` | `xhigh` | [references/backend-codex.md](references/backend-codex.md) |
 | Grok, ask-grok | `grok` | `grok-4.6` | `xhigh` | [references/backend-grok.md](references/backend-grok.md) |
+| Gemini, Antigravity, agy, ask-gemini | `agy` | vendor default (omit `--model`; list: `agy models`) | `high` | [references/backend-agy.md](references/backend-agy.md) |
 | Unspecified | Matching `defaults.*` key in user config (`spec`, `spec-ui`, `plan`, `plan-ui`, `implement`, `implement-ui`, `writer`, `research`, `code-review-task`, `code-review-adversarial`, `code-review-visual`, …) if set **and** (backend not the parent family, or value is self-class); else ask once. | Config `[models]` / `[effort]`, else table defaults | — | [references/user-config.md](references/user-config.md) |
 
-If the user pins a model id, use it. Cursor Agent / Gemini / OpenCode / Droid: [references/more-clis.md](references/more-clis.md) (not in `scripts/spawn.sh` yet).
+If the user pins a model id, use it. Cursor Agent / OpenCode / Droid / legacy Gemini CLI: [references/more-clis.md](references/more-clis.md) (not in `scripts/spawn.sh`). Config token `gemini` is that legacy CLI, not an alias for `agy`.
 
 **List what this machine actually has:**
 
@@ -45,10 +46,11 @@ If the user pins a model id, use it. Cursor Agent / Gemini / OpenCode / Droid: [
 claude --help
 codex debug models --bundled
 grok models
+agy models
 cursor-agent --list-models
 ```
 
-Windows PowerShell: `Get-Command claude,codex,grok`. Do **not** hardcode `~/.local/bin/…`. **`agent` on PATH is often Grok Build, not Cursor.** Cursor’s CLI is `cursor-agent`.
+Windows PowerShell: `Get-Command claude,codex,grok,agy`. Do **not** hardcode `~/.local/bin/…`. **`agent` on PATH is often Grok Build, not Cursor.** Cursor’s CLI is `cursor-agent`.
 
 There is no `harness-spawn` skill. Stale `ask-claude` / `ask-gpt` / `ask-grok` stubs: this skill.
 
@@ -76,7 +78,7 @@ Invoke `scripts/spawn.sh` from the skill directory of the **SKILL.md you loaded 
 
 `cwd` / `-C` / `--cwd` must be a path **that CLI understands** (WSL `/mnt/d/…` vs Windows `D:\…`). Do not mix Windows `claude.exe` into WSL.
 
-Visual screenshots in `$RUN`: Claude and Cursor Agent need `--add-dir "$RUN"`. Grok: copy shots into `<project-dir>`. Codex: `-i` (script `--image`).
+Visual screenshots in `$RUN`: Claude, Cursor Agent, and agy need `--add-dir "$RUN"`. Grok: copy shots into `<project-dir>`. Codex: `-i` (script `--image`).
 
 ### Windows PowerShell (gotchas — do not skip)
 
@@ -95,7 +97,7 @@ PowerShell expands `$(…)`, `cat`, and `$RUN` **before** bash sees them. A doub
 
 If this parent auto-allows only some CLIs, the spawn will block on `bash` / `bash.exe`, this script, or the target backend (`codex`, …). Ask the user to allow those, or use an approval mode that can allow the one spawn. Do not hardcode a machine allowlist.
 
-Spawn pins Auto-equivalent permission: Claude/Grok `--permission-mode auto`. Codex all modes `--approve-for-me` (do not also pass `--sandbox`: 0.147 mutex). Claude Review still omits Edit/Write in `--tools` (Bash remains for temp files). Do not pass `--ask-for-approval` to `codex exec` (TUI-only; exec rejects it). App-edit restraint is the brief (`Do not edit application files.`), not a read-only sandbox.
+Spawn pins Auto-equivalent permission: Claude/Grok `--permission-mode auto`. Codex all modes `--approve-for-me` (do not also pass `--sandbox`: 0.147 mutex). agy Implement `--dangerously-skip-permissions` (agy has no classifier Auto; this is YOLO). agy Review omits it. Claude Review still omits Edit/Write in `--tools` (Bash remains for temp files). Do not pass `--ask-for-approval` to `codex exec` (TUI-only; exec rejects it). App-edit restraint is the brief (`Do not edit application files.`), not a read-only sandbox.
 
 ## Shared protocol
 

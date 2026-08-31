@@ -84,6 +84,22 @@ else
   skip "grok not on PATH (parse)"
 fi
 
+if has_bin agy; then
+  run_cmd agy --help
+  if echo "$out$err" | grep -q -- '--print'; then
+    ok "agy --help lists --print"
+  else
+    fail_msg "agy --help missing --print (exit=$ec)"
+  fi
+  if echo "$out$err" | grep -q -- '--dangerously-skip-permissions'; then
+    ok "agy --help lists --dangerously-skip-permissions"
+  else
+    fail_msg "agy --help missing --dangerously-skip-permissions (exit=$ec)"
+  fi
+else
+  skip "agy not on PATH (parse)"
+fi
+
 # --- live ---
 
 live_one() {
@@ -110,6 +126,7 @@ EOF
 live_one claude
 live_one codex
 live_one grok
+live_one agy
 
 echo
 echo "passed=$pass failed=$fail"

@@ -15,7 +15,9 @@ Copy [assets/config.example.toml](../assets/config.example.toml). Do **not** aut
 
 ## Schema
 
-TOML. Values must be allowlisted tokens (no `$`, backticks, `;`, spaces, or paths). Backend values: `claude` | `codex` | `grok` | `cursor` | `gemini` | `opencode` | `droid`. Self-class values (parent does the job; do not spawn): `self` | `orchestrator` | `parent` | `you`. Canonical: `self`. If the value is unknown, or a backend binary is missing, ask once. Self-class is never “missing binary.”
+TOML. Values must be allowlisted tokens (no `$`, backticks, `;`, spaces, or paths). Backend values: `claude` | `codex` | `grok` | `cursor` | `agy` | `gemini` | `opencode` | `droid`. Self-class values (parent does the job; do not spawn): `self` | `orchestrator` | `parent` | `you`. Canonical: `self`. If the value is unknown, or a backend binary is missing, ask once. Self-class is never “missing binary.”
+
+`agy` is Antigravity CLI (`scripts/spawn.sh`). `gemini` is legacy Gemini CLI ([more-clis.md](more-clis.md)), not an alias for `agy`. Utterance “Gemini” still routes to `agy`; a stored `gemini` token does not.
 
 Key names: `^[a-z][a-z0-9_-]*$` (hyphens allowed).
 
