@@ -190,6 +190,81 @@
         "Does not claim the implement shipped under --project",
         "Does not copy from $RUN as if that were success"
       ]
+    },
+    {
+      "id": 20,
+      "prompt": "Orchestrate this feature end-to-end. I did not name a harness. (Test setup: research=codex, implement=claude, code-review=codex. Parent is Grok.)",
+      "expected_output": "Full loop: Practices (exactly two Anthropic+OpenAI anchors, cited/dated) then Implement (brief pastes full TDD table) then adversarial code-review then parent coherence. One job per spawn. Stop if a stage hits limits.",
+      "expectations": [
+        "Treats open-ended orchestrate as the full practices→implement→validate→coherence loop",
+        "Practices stage requires exactly two official anchors (Anthropic + OpenAI) with citations/dates",
+        "Implement brief pastes the full TDD policy table from roles.md",
+        "Spawns at most one harness at a time",
+        "Does not spawn grok (parent family)"
+      ]
+    },
+    {
+      "id": 21,
+      "prompt": "Orchestrate this — get a second opinion on the diff. I did not name a harness. (Test setup: code-review=codex, implement=claude. Parent is Grok.)",
+      "expected_output": "Single-job narrowing: one-shot code-review only. Does not run Practices or Implement.",
+      "expectations": [
+        "Uses code-review (or alias), not implement",
+        "Does not run the full orchestrate loop",
+        "Invokes scripts/spawn.sh --backend codex --mode review",
+        "Brief pastes code-review return contract and forbids requesting-code-review"
+      ]
+    },
+    {
+      "id": 22,
+      "prompt": "Ask Codex to review this. Codex returns a usage-limit / rate-limit error. Parent is Cursor.",
+      "expected_output": "Sticky route: does not retarget to Claude or Grok. Marks blocked/UNVERIFIED, asks once, and does not continue a multi-stage loop.",
+      "expectations": [
+        "Does not spawn a second backend to finish the review",
+        "Does not silently switch models",
+        "Surfaces the limit failure to the user",
+        "Marks the harness blocked or UNVERIFIED",
+        "Asks once"
+      ]
+    },
+    {
+      "id": 23,
+      "prompt": "Ask for a code review. (Test setup: code-review-task=codex and code-review-adversarial=claude set to different backends. Parent is Grok.)",
+      "expected_output": "Ask once which review backend. Does not silently pick.",
+      "expectations": [
+        "Detects conflicting review alias backends",
+        "Asks once",
+        "Does not spawn both"
+      ]
+    },
+    {
+      "id": 24,
+      "prompt": "Run the full practices→implement→review loop using Codex. Parent is Grok. Config implement=claude code-review=codex research=codex.",
+      "expected_output": "Explicit full-loop wins over the named harness. Does not collapse to one Codex shot. May pin Codex where config allows; still runs multiple stages (one spawn each).",
+      "expectations": [
+        "Does not treat named Codex as one-shot collapse",
+        "Runs more than one stage of the full loop",
+        "Does not spawn grok (parent family)"
+      ]
+    },
+    {
+      "id": 25,
+      "prompt": "Ask Grok for a visual review of shots in the temp run dir. Parent is Claude.",
+      "expected_output": "Copies screenshots into --project before spawn (not only $RUN). Brief names project paths.",
+      "expectations": [
+        "Does not rely on Grok reading $RUN alone",
+        "Copies or places shots under --project",
+        "Invokes scripts/spawn.sh --backend grok"
+      ]
+    },
+    {
+      "id": 26,
+      "prompt": "Orchestrate this — research current Antigravity CLI flags. (Test setup: research=codex. Parent is Grok.)",
+      "expected_output": "One-shot research. Brief uses ANSWER contract, Superpowers none, no TDD.",
+      "expectations": [
+        "Uses defaults.research",
+        "Does not paste implement TDD table",
+        "Return format uses ANSWER not behaviour-shipped DONE"
+      ]
     }
   ]
 }

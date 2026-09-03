@@ -11,7 +11,7 @@ license: MIT
 compatibility: Requires another coding-agent CLI on PATH (claude, codex, grok, agy, and/or cursor-agent). Windows, WSL, Linux, macOS. Git Bash on native Windows.
 metadata:
   author: ptmrio
-  version: "0.1.9"
+  version: "0.2.1"
 ---
 
 # Harness Subagent
@@ -20,9 +20,30 @@ Dispatch **another coding-agent harness** as a one-shot subagent, then synthesiz
 
 **Core principle: the harness is a subagent, not an oracle.** A model reviewing its own work reproduces its own blind spots. That worth is destroyed if you forward the answer without judging it.
 
-Do **not** pick a harness because of a task stereotype unless the **user config** has that key (see [references/user-config.md](references/user-config.md)). Routing order: **this utterance → user config → ask once.** Same protocol for every backend.
+**Orchestrator voice:** CTO-level — brief, concise, bullets, ASCII previews when they beat prose. Stay aligned with the human operator (surface assumptions; ask on irreversible actions and unsettled product preferences; do not silently invent scope).
+
+**Sticky route:** If the child hits usage/rate limits (or any soft failure that tempts a swap), do **not** retarget another backend or model. Report the failure, mark UNVERIFIED / blocked, ask once. In a **full orchestrate loop**, stop the checklist — do **not** continue to later stages without the failed stage’s deliverable (e.g. no Implement if Practices died on a limit).
+
+Do **not** pick a harness because of a task stereotype unless the **user config** has that key (see [references/user-config.md](references/user-config.md)). Routing order: **this utterance → user config → ask once.** Same protocol for every backend. Role personality and Superpowers maps: [references/roles.md](references/roles.md) (**canonical**).
 
 Default to **Review** (do not edit application files). Allow application writes only when the user (or an approved plan) asks for Implement. Review and Visual may create temp files and write reports.
+
+## Orchestrate vs one-shot
+
+**Precedence (evaluate in order):**
+
+1. **Single-job narrowing wins one-shot** — utterance names one job (second opinion, review this diff, implement only …, rewrite the README, research X) → one brief, one spawn. A leading “Orchestrate this —” does **not** force the full loop.
+2. **Explicit full-loop wins** — user says “run the full loop” / names practices+implement+review together / open-ended “orchestrate this feature end-to-end” with **no** single-job noun → full checklist below. A named harness here only **pins the backend for each stage** (or per-stage config); it does **not** collapse the loop into one shot.
+3. Otherwise ask once what they want (full loop vs one job).
+
+**Full-loop checklist** (skip steps already done or user-waived; **one job per spawn**):
+
+1. **Practices** — Research (or parent `self` if pinned): exactly **two** anchors — one Anthropic + one OpenAI official guidance. Optionally supplement (not replace) with Cursor/xAI when the stack/harness makes them relevant. Cite + date-stamp.
+2. **Implement** — bounded slice against those practices. Paste the full TDD table from [roles.md](references/roles.md).
+3. **Validate** — `code-review` (adversarial). Add `code-review-visual` when UI is in play.
+4. **Final coherence** — parent default `self` (or one short Review spawn): logic, redundancy, overall sanity vs the two anchors and the original ask.
+
+If any stage is blocked (including sticky-route limits), **stop** and ask — do not skip ahead.
 
 ## Pick a backend
 
@@ -36,7 +57,7 @@ Family is the **parent product/CLI**, not the model id. Cursor Agent, `cursor-ag
 | GPT, Codex, Sol, Terra, Luna, ask-gpt | `codex` | `gpt-5.6-sol` | `xhigh` | [references/backend-codex.md](references/backend-codex.md) |
 | Grok, ask-grok | `grok` | `grok-4.6` | `xhigh` | [references/backend-grok.md](references/backend-grok.md) |
 | Gemini, Antigravity, agy, ask-gemini | `agy` | vendor default (omit `--model`; list: `agy models`) | `high` | [references/backend-agy.md](references/backend-agy.md) |
-| Unspecified | Matching `defaults.*` key in user config (`spec`, `spec-ui`, `plan`, `plan-ui`, `implement`, `implement-ui`, `writer`, `research`, `code-review-task`, `code-review-adversarial`, `code-review-visual`, …) if set **and** (backend not the parent family, or value is self-class); else ask once. | Config `[models]` / `[effort]`, else table defaults | — | [references/user-config.md](references/user-config.md) |
+| Unspecified | Matching `defaults.*` key in user config (`spec`, `spec-ui`, `plan`, `plan-ui`, `implement`, `implement-ui`, `writer`, `research`, `code-review`, `code-review-visual`, …) if set **and** (backend not the parent family, or value is self-class); else ask once. Review aliases: `code-review-task` / `code-review-adversarial` / `code-review-adverserial` / `review` → `code-review` (see resolution order in user-config). | Config `[models]` / `[effort]`, else table defaults | — | [references/user-config.md](references/user-config.md) |
 
 If the user pins a model id, use it. Cursor Agent / OpenCode / Droid / legacy Gemini CLI: [references/more-clis.md](references/more-clis.md) (not in `scripts/spawn.sh`). Config token `gemini` is that legacy CLI, not an alias for `agy`.
 
@@ -78,7 +99,7 @@ Invoke `scripts/spawn.sh` from the skill directory of the **SKILL.md you loaded 
 
 `cwd` / `-C` / `--cwd` must be a path **that CLI understands** (WSL `/mnt/d/…` vs Windows `D:\…`). Do not mix Windows `claude.exe` into WSL.
 
-Visual screenshots in `$RUN`: Claude and Cursor Agent need `--add-dir "$RUN"`. agy Review/Visual too; agy Implement must **not** pass `--add-dir` (it makes `$RUN` a writable workspace). Grok: copy shots into `<project-dir>`. Codex: `-i` (script `--image`).
+Visual screenshots: Claude and Cursor Agent need `--add-dir "$RUN"` with shots in `$RUN`. agy Review/Visual too; agy Implement must **not** pass `--add-dir` (it makes `$RUN` a writable workspace). **Grok: copy shots into `--project` (application tree), never only into `$RUN`** — Grok cannot read the temp run dir. Codex: `-i` (script `--image`).
 
 ### Windows PowerShell (gotchas — do not skip)
 
@@ -113,58 +134,36 @@ Task description, not a data dump. **Do not paste diffs or file contents** — n
 
 - Prefer named files/symbols over “explore the repo.”
 - Diff: exact range, `git diff <A>..<B> -- <paths…>`.
-- Visual/confirm: **forbid** `git log`, full-tree `git diff`, status dumps. `spawn.sh --image` is Codex only. Claude/Grok: copy shots into `$RUN` (Claude already gets `--add-dir "$RUN"`); name the files in the brief.
+- Visual/confirm: **forbid** `git log`, full-tree `git diff`, status dumps. `spawn.sh --image` is Codex only. Claude: copy shots into `$RUN` (already gets `--add-dir "$RUN"`). **Grok: copy shots into `--project`.** Name the files in the brief.
 - Put parent evidence under **What was already tried**. Prefer “verify this” over “rediscover.” If you already ran `gh`/`curl` and Codex Review may lack network, put the output here and forbid re-running those commands.
 - **Product override:** if the user locked a product decision, say so.
 
 Five parts, in order:
 
-1. **Objective** — one sentence naming the verdict / deliverable.
+1. **Objective** — one sentence naming the verdict / deliverable (role card objective cue).
 2. **Where to look** — paths, bounded commands, symbols; edit allowlist if Implement.
 3. **What was already tried**
 4. **What would change my mind** — settling evidence (Review) or acceptance gates (Implement).
-5. **Return format** — paste the matching contract.
+5. **Return format** — paste from [references/roles.md](references/roles.md): the role’s **return contract**, Superpowers map (exact names), must/must-not, and for implement/implement-ui the **full TDD policy table** (never “see roles.md” alone). Role card wins over any older stub wording.
 
-#### Review / Visual return contract
+### Postures → role cards
 
-```
-Return with VERDICT as the first line of the report (no preamble, no skill loading):
-1. VERDICT — one line.
-2. FINDINGS — ranked most serious first, each with file:line and a concrete failure case.
-3. UNVERIFIED — what you could not check and what you would need to check it.
-Be concrete and adversarial. If you think I am wrong, say so plainly.
-Do not load using-superpowers, requesting-code-review, or other process skills — you are already the subagent.
-Finish this report even if some checks failed; put gaps under UNVERIFIED.
-```
+Index only — full cards + contracts in [references/roles.md](references/roles.md).
 
-Add for Review: `Do not edit application files.` (temp files and the report are allowed.)
-Add for Visual: `Do not invent a browser stack. Reason from attached/named screenshots + code.` **Exception:** user-config key `code-review-visual` — Playwright / live UI is in scope; do not add that forbid line.
-
-#### Implement return contract
-
-```
-Return with VERDICT as the first line of the report (no preamble):
-1. VERDICT — one line (done / blocked + why).
-2. DONE — files touched and behaviour shipped.
-3. GATES — exact commands run and pass/fail.
-4. UNVERIFIED — what you could not prove.
-Edit only paths named in the brief. Commit only if the brief says to. Never push.
-Do not load using-superpowers as ceremony — execute the brief.
-```
-
-### Postures (harness-agnostic)
-
-| Posture | Use for | Write? | Objective cue |
-|---|---|---|---|
-| **Adversarial** | plans, designs, hard-to-reverse calls | no | "Try to refute this plan. Assume it is flawed and find where." |
-| **Critical** | a diff or change before merge | no | "Review this diff for correctness bugs. Rank by severity." |
-| **Visual** | screenshot / live-UI defect confirm | no | "Confirm or refine these defects from screenshots + named sources." |
-| **Unstuck** | a bug two fixes failed to kill | usually no | "Diagnose independently. Do not assume my diagnosis is right." |
-| **Implement** | a bounded slice the user assigned to this harness | **yes** | "Ship the briefed deliverable. Edit only the named paths." |
+| Posture / key | Write? | Card |
+|---|---|---|
+| **code-review** (aliases: task, adversarial, adverserial, review) | no | Adversarial cleanliness + correctness |
+| **code-review-visual** | no | Change review + holistic user-walk |
+| **research** | no | Official/modern sources (ANSWER contract) |
+| **implement** / **implement-ui** | **yes** | Ship + pasted TDD table |
+| **spec** / **plan** / **writer** | **yes** | Light cards + own contracts |
+| **Unstuck** | usually no | Independent diagnosis |
 
 Config keys and spawn `--mode`: [references/user-config.md](references/user-config.md). Extra `[defaults]` keys are labels, not inferred. The skill has no author job→harness map.
 
 ### Report back — synthesis, never a paste
+
+CTO voice: bullets; ASCII when useful; keep the human aligned.
 
 1. **What was asked** — one line.
 2. **Harness verdict** — verbatim first `VERDICT` line (strip preamble).
@@ -193,6 +192,10 @@ Cheap-check claims (`file:line` exists; tests actually fail). For Implement: fil
 | "I'll paste the diff to save it a step" | Named paths + bounded range. |
 | "Harness must be read-only" | Review must not edit application files; temp/report writes are allowed. Implement may edit when the brief says so. |
 | "This task wants Codex / Opus / Grok" | Utterance, then config, then ask. No task map. |
+| "Child hit a usage limit — switch models" | Sticky route. Do not retarget. Report and ask once. Stop later orchestrate stages. |
+| "Orchestrate this — second opinion" means full loop | Single-job narrowing → one-shot review. |
+| "Full loop using Codex" is one-shot because Codex is named | Explicit full-loop language wins; harness only pins backends. |
+| "Practices failed limits — continue to Implement" | Stop the checklist. Ask once. |
 | "Three harnesses is more independent" | One, different family, unless asked for multiple. |
 | "I'll nest the bash recipe in PowerShell -lc" | `scripts/spawn.sh` as file argv. |
 | "Claude got an empty prompt — feed stdin from the parent" | Empty argv is quoting. Use the script (it already files stdin). |

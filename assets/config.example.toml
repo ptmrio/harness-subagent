@@ -4,6 +4,8 @@
 #     or: self | orchestrator | parent | you  (parent does the job; no spawn)
 # These assignments are suggestions. Change them. The skill has no job→harness map.
 # cursor from a Cursor parent is skipped (same family), not treated as self.
+# Role personalities: references/roles.md
+# Aliases still work: code-review-task / code-review-adversarial / review → code-review
 
 [defaults]
 spec = "claude"
@@ -14,9 +16,8 @@ implement = "claude"
 implement-ui = "claude"
 writer = "grok"            # sustained prose; suggestion only — not claude
 research = "codex"         # lookup / competitive / current docs
-code-review-task = "codex"
-code-review-adversarial = "codex"
-code-review-visual = "codex"   # Playwright / live UI + shots; spawn --mode visual
+code-review = "codex"      # adversarial cleanliness + correctness
+code-review-visual = "codex"   # Playwright / live UI + shots; holistic user-walk
 
 # Extra keys are optional named labels. Used only when you say that word this turn.
 

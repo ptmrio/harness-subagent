@@ -34,12 +34,19 @@ If the parent is metered (for example Cursor **Grok Bot**), outsource the long r
 
 Name the harness when you know it. **One job per spawn.** One `/harness-subagent` (or “orchestrate this”) is enough — do not paste this skill into every message.
 
-**Good**
+**Orchestrate (full loop)** — open-ended multi-step, or you ask for the full pipeline:
+
+- *Orchestrate this feature end-to-end.*
+- *Run the full loop: practices, implement, review, coherence.*
+
+That runs: two vendor practice anchors (Anthropic + OpenAI) → implement → adversarial review (+ visual if UI) → final coherence. Single-job lines after “Orchestrate this — …” stay **one-shot** (e.g. second opinion = review only).
+
+**Good (one-shot)**
 
 - *Orchestrate this — outsource the slice to Codex.*
 - *Ask Codex to review this diff.*
-- *Have Claude Code implement only the named UI paths, then review.*
-- *You write the spec; ask Codex to pressure-test the plan.*
+- *Have Claude Code implement only the named UI paths.* (Then a **second** spawn for review, or parent reviews.)
+- *You write the spec; ask Codex to pressure-test the plan.* (Two jobs → two spawns or parent+spawn.)
 - *Get a visual review from Codex of the screenshots I just took.*
 - *Ask Grok Build to try to refute this plan.*
 - *Ask Codex from Claude Code* / *have Grok Build invoke Claude Code.*
@@ -47,9 +54,21 @@ Name the harness when you know it. **One job per spawn.** One `/harness-subagent
 **Avoid**
 
 - “Self review” and “spawn Claude” in the same breath — pick one.
-- spec + plan + implement + review as one utterance unless you want four paid runs (or say “spec and plan together, then implement, then review”).
 - Pasting diffs or whole files when named paths suffice.
 - Interrupting a wait unless you intend to cancel the child.
+- Expecting the parent to swap models when a child hits usage limits — it will stop and ask (and stop later orchestrate stages).
+- One spawn that both implements and reviews — that is two jobs.
+
+## Opinionated roles
+
+Briefs pull personality from `references/roles.md` (Superpowers by default as **named** skills only — no full workflow restart in the child):
+
+| Role | Bar |
+|---|---|
+| `code-review` | Adversarial: bugs, overkill, hacks, useless tests, best-practice drift |
+| `code-review-visual` | Change review + holistic user-walk (screenshots-only = fallback) |
+| `implement` | TDD for useful contracts; skip ceremony tests with a GATES reason |
+| `research` | Official/modern sources; modern over legacy when they conflict |
 
 ## Recommended use
 
@@ -61,16 +80,16 @@ Author defaults (not the protocol):
 | UI implementation, layout, interaction | Claude Code (Opus) |
 | Sustained writing (README, skill copy, About) | Grok Build CLI (name it this turn if the parent is already Grok) |
 | Research (docs, competitive, GitHub inventory) | Codex |
-| Diff / correctness review | Codex |
-| Visual review (screenshots + named sources) | Codex |
+| Diff / adversarial review | Codex |
+| Visual review (live walk or screenshots + named sources) | Codex |
 | Pressure-test a plan (assume it is flawed) | a *different* harness than the one that wrote it |
 | Stuck bug, two fixes already failed | a *different* harness than the parent |
 
-**Worth a run:** second opinions, adversarial review of plans, visual confirmation, unstuck diagnosis, sustained writing, research lookups, a bounded implement slice assigned to that harness.
+**Worth a run:** second opinions, adversarial review, visual confirmation, unstuck diagnosis, sustained writing, research lookups, a bounded implement slice assigned to that harness, full orchestrate loops.
 
 **Not worth a run:** naming, style, formatting, or anything the parent can already answer from context.
 
-The parent writes a **bounded brief** (named paths and a tight investigation — not a pasted dump), runs `scripts/spawn.sh` in the background, then reports:
+The parent writes a **bounded brief** (named paths and a tight investigation — not a pasted dump), runs `scripts/spawn.sh` in the background, then reports in CTO style (bullets, ASCII when useful):
 
 1. What was asked
 2. The harness verdict (quoted)
@@ -97,7 +116,7 @@ The CLIs do not load this file. The **skill** tells the parent to read it when y
 ~/.config/harness-subagent/config.toml
 ```
 
-Copy `assets/config.example.toml` there (`spec`, `plan`, `implement`, `writer`, `research`, `code-review-*`, …). Values may be a CLI or `self` (parent does that job). `cursor` from a Cursor parent is skipped (same family), not treated as `self`. Override path: `$HARNESS_SUBAGENT_CONFIG`. Schema: `references/user-config.md`.
+Copy `assets/config.example.toml` there (`spec`, `plan`, `implement`, `writer`, `research`, `code-review`, `code-review-visual`, …). Values may be a CLI or `self` (parent does that job). `cursor` from a Cursor parent is skipped (same family), not treated as `self`. Aliases `code-review-task` / `code-review-adversarial` still resolve to `code-review`. Override path: `$HARNESS_SUBAGENT_CONFIG`. Schema: `references/user-config.md`.
 
 Git clone if you do not want `npx`:
 

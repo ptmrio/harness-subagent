@@ -27,28 +27,29 @@ Prefer the more specific key when the job matches, in this order:
 
 1. `*-ui` / `code-review-visual` over their non-ui / non-visual twins (if `*-ui` is unset, fall back to the twin, then continue).
 2. `writer` over `implement` when the deliverable is **sustained text** (README, SKILL.md copy, GitHub About, article) — not a code slice that happens to include comments.
-3. `research` over `code-review-*` when there is **no diff / code-change under review** (external lookup, competitive landscape, current vendor docs, GitHub inventory). “Is this diff correct?” is `code-review-task`, not `research`.
+3. `research` over `code-review*` when there is **no diff / code-change under review** (external lookup, competitive landscape, current vendor docs, GitHub inventory). “Is this diff correct?” is `code-review`, not `research`.
 4. `implement-ui` still beats `writer` for UI screens.
 
-| Key | When | `spawn.sh --mode` |
-|---|---|---|
-| `spec` | Write or refine a spec / design (not UI-shaped). | `implement` |
-| `spec-ui` | Same, for layout / interaction / screens. | `implement` |
-| `plan` | Write or refine an implementation plan (not UI-shaped). | `implement` |
-| `plan-ui` | Same, for a UI slice. | `implement` |
-| `implement` | Ship a bounded slice that is **not** UI/UX. | `implement` |
-| `implement-ui` | Ship UI/UX: layout, interaction, CSS, screens. | `implement` |
-| `writer` | Sustained prose: README, SKILL.md copy, GitHub About/topics, articles. Alias: `docs` (the **key name**, not the English word in “current docs”). | `implement` |
-| `research` | External lookup, competitive landscape, current vendor docs, GitHub inventory. Alias: `researcher`. | `review` |
-| `code-review-task` | Ordinary diff / correctness review. | `review` |
-| `code-review-adversarial` | Pressure-test; assume it is flawed. Alias: `code-review-adverserial`. | `review` |
-| `code-review-visual` | Live UI or screenshots (Playwright / browser MCP allowed). | `visual` |
+| Key | When | `spawn.sh --mode` | Role card |
+|---|---|---|---|
+| `spec` | Write or refine a spec / design (not UI-shaped). | `implement` | [roles.md](roles.md) light |
+| `spec-ui` | Same, for layout / interaction / screens. | `implement` | light |
+| `plan` | Write or refine an implementation plan (not UI-shaped). | `implement` | light |
+| `plan-ui` | Same, for a UI slice. | `implement` | light |
+| `implement` | Ship a bounded slice that is **not** UI/UX. | `implement` | implement |
+| `implement-ui` | Ship UI/UX: layout, interaction, CSS, screens. | `implement` | implement |
+| `writer` | Sustained prose: README, SKILL.md copy, GitHub About/topics, articles. Alias: `docs`. | `implement` | writer |
+| `research` | External lookup, competitive landscape, current vendor docs, GitHub inventory. Alias: `researcher`. | `review` | research |
+| `code-review` | Adversarial diff/plan review (correctness + cleanliness). | `review` | code-review |
+| `code-review-visual` | Live UI or screenshots (Playwright / browser MCP allowed); holistic user-walk. | `visual` | code-review-visual |
 
-Aliases (same lookup as the target): `review` → `code-review-task`; `ui` → `implement-ui`; `ux` / `ui-ux` → `implement-ui`; `docs` → `writer`; `researcher` → `research`.
+**Review key resolution:** check in order: `code-review` → `code-review-adversarial` → `code-review-adverserial` → `code-review-task` → alias `review`. If more than one of these is set to **different** backends, **ask once**.
 
-The **skill** still has no author job→harness map. These keys are the **user** speaking in advance. `assets/config.example.toml` is a suggestion (`writer = "grok"` there); copy and change it.
+Aliases (same card / lookup): `code-review-task` → `code-review`; `code-review-adversarial` → `code-review`; `code-review-adverserial` → `code-review`; `review` → `code-review`; `ui` → `implement-ui`; `ux` / `ui-ux` → `implement-ui`; `docs` → `writer`; `researcher` → `research`.
 
-`code-review-visual`: do **not** put “forbid a browser stack” in the brief. Name Playwright (or the parent’s shots). Codex: `spawn.sh --mode visual` and `--image` per screenshot. Claude/agy: `--mode visual` runs as Review (brief: do not edit application files); shots via `--add-dir` / named paths. agy Implement still omits `--add-dir`.
+The **skill** still has no author job→harness map. These keys are the **user** speaking in advance. `assets/config.example.toml` is a suggestion; copy and change it. Personality for each key: [roles.md](roles.md).
+
+`code-review-visual`: do **not** put “forbid a browser stack” in the brief. Name Playwright (or the parent’s shots). Codex: `spawn.sh --mode visual` and `--image` per screenshot. Claude/agy: `--mode visual` runs as Review (brief: do not edit application files); shots via `--add-dir` / named paths. agy Implement still omits `--add-dir`. Default identity is holistic user-walk; screenshots-only is fallback.
 
 ### Self-class values
 
@@ -62,7 +63,7 @@ Pass self-class only in the TOML (or when this utterance says the parent should 
 
 ### Extra `defaults` keys (not inferred)
 
-Any other matching key is a **named label**. The parent uses it only when this utterance contains that label. It must **not** invent keys. `writer` / `research` are known keys above, not extra labels. Config fixtures in evals are test setup, not labels the user spoke.
+Any other matching key is a **named label**. The parent uses it only when this utterance contains that label. It must **not** invent keys. `writer` / `research` / `code-review` are known keys above, not extra labels. Config fixtures in evals are test setup, not labels the user spoke.
 
 Unknown `[models]` / `[effort]` keys for extra CLIs are optional; those backends still need [more-clis.md](more-clis.md).
 
