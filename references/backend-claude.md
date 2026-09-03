@@ -10,14 +10,24 @@ The script feeds the brief as **file stdin** (`< "$RUN/brief.md"`). Multiline ar
 |---|---|
 | `-p` | Headless one-shot. Without it you get the TUI. |
 | `--permission-mode auto` | Classifier verifies, then allows. Review still omits Edit/Write in `--tools`. |
-| `--tools` | Review: `Bash,Read,Glob,Grep` (Bash is how Review writes temp files). Implement adds `Edit,Write`. |
+| `--tools` | Review: `Bash,Read,Glob,Grep` (Bash is how Review writes `report.md` / temp files). Implement adds `Edit,Write`. |
 | `--model opus` | Series alias unless the user or config pins. |
 | `--effort xhigh` | `low` `medium` `high` `xhigh` `max`. |
 | `--no-session-persistence` | One-shot; do not clutter resume history. |
-| `--add-dir "$RUN"` | Lets Read see the brief/screenshots outside the project tree. |
+| `--add-dir "$RUN"` | Lets Read/Bash see the brief/screenshots and write `report.md` outside the project tree. |
+| `--append-system-prompt …` | Spawn script requires writing `report.md` before cleanup (final `-p` text is **last turn only**). |
 
-Optional: `--append-system-prompt 'First line of your final report must be: VERDICT — …'`. Images: name paths in the brief.
+Images: name paths in the brief. `spawn.sh --image` is ignored for Claude. Copy screenshots into `$RUN`.
 
-`spawn.sh --image` is ignored for Claude. Copy screenshots into `$RUN`; `--add-dir "$RUN"` is already on the argv. If a gate needs a host binary Git Bash / `--tools` cannot run (e.g. `powershell.exe` on native Windows), the **parent** runs it or the finding stays UNVERIFIED.
+## Capture hardening
 
-If `last.md` is `You've hit your session limit`, do **not** relaunch Claude immediately — switch backend or wait for the stated reset.
+Claude `-p --output-format text` emits only the **final assistant message**. A cleanup turn after a good visual report will overwrite stdout. Mitigations in `spawn.sh`:
+
+1. Child must write `$RUN/report.md` (brief + append-system-prompt).
+2. Raw stdout lands in `$RUN/stdout.md`.
+3. `finalize_capture` prefers `report.md` when it contains `VERDICT`, else stdout → `$RUN/last.md`.
+4. Bold `**VERDICT` / `VERDICT:` normalized; usage/session-limit text becomes `VERDICT — BLOCKED: usage/rate limit` with `capture-status.txt=usage-limit`.
+
+If `capture-status.txt` is `usage-limit` or `no-verdict`: do **not** relaunch Claude immediately and do **not** retarget backends (sticky route). Ask once / wait for the stated reset.
+
+If a gate needs a host binary Git Bash / `--tools` cannot run (e.g. `powershell.exe` on native Windows), the **parent** runs it or the finding stays UNVERIFIED.

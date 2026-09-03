@@ -11,7 +11,7 @@ license: MIT
 compatibility: Requires another coding-agent CLI on PATH (claude, codex, grok, agy, and/or cursor-agent). Windows, WSL, Linux, macOS. Git Bash on native Windows.
 metadata:
   author: ptmrio
-  version: "0.2.1"
+  version: "0.2.2"
 ---
 
 # Harness Subagent
@@ -125,7 +125,7 @@ Spawn pins Auto-equivalent permission: Claude/Grok `--permission-mode auto`. Cod
 0. **Gate.** Name the one thing you cannot answer from this repo / this context. If you cannot name it, do not spawn — **unless this utterance already named a harness** (utterance still wins; `writer=self` does not suppress “Ask Claude to rewrite the README”). Naming, style, formatting, and “already tried” that already is the answer are not worth a run. **Sustained writer/research** (a README rewrite, a competitive lookup) is not “naming”: spawn when the **resolved route** is a CLI.
 1. Write `brief.md` under the temp run dir (never inside the repo).
 2. Spawn **`scripts/spawn.sh` in the background** (minutes; a foreground timeout kills spend). Do not copy or edit the script.
-3. Wait until the **process exits**. Then read `$RUN/last.md`. Process still running + no `VERDICT` yet → not done. Process exited, `VERDICT` not on line 1 → completed but malformed; strip preamble and use the first `VERDICT` line. Do not relaunch a finished job because of a preamble.
+3. Wait until the **process exits**. Then read `$RUN/last.md` and `$RUN/capture-status.txt`. Process still running + no `VERDICT` yet → not done. `spawn.sh` already prefers `$RUN/report.md` over final stdout and normalizes bold/`VERDICT:` lines. If status is `usage-limit` or `no-verdict`, mark the harness UNVERIFIED / blocked — do **not** invent a verdict and do **not** retarget backends (sticky route). Do not relaunch a finished job because of a preamble.
 4. Synthesize — never paste-only.
 
 ### Write the brief
@@ -144,7 +144,7 @@ Five parts, in order:
 2. **Where to look** — paths, bounded commands, symbols; edit allowlist if Implement.
 3. **What was already tried**
 4. **What would change my mind** — settling evidence (Review) or acceptance gates (Implement).
-5. **Return format** — paste from [references/roles.md](references/roles.md): the role’s **return contract**, Superpowers map (exact names), must/must-not, and for implement/implement-ui the **full TDD policy table** (never “see roles.md” alone). Role card wins over any older stub wording.
+5. **Return format** — paste from [references/roles.md](references/roles.md): the role’s **return contract** (includes **write `report.md` before cleanup**), Superpowers map (exact names), must/must-not, and for implement/implement-ui the **full TDD policy table** (never “see roles.md” alone). Role card wins over any older stub wording. Name the run-dir path for `report.md` when the child cannot infer it.
 
 ### Postures → role cards
 
@@ -196,6 +196,8 @@ Cheap-check claims (`file:line` exists; tests actually fail). For Implement: fil
 | "Orchestrate this — second opinion" means full loop | Single-job narrowing → one-shot review. |
 | "Full loop using Codex" is one-shot because Codex is named | Explicit full-loop language wins; harness only pins backends. |
 | "Practices failed limits — continue to Implement" | Stop the checklist. Ask once. |
+| "last.md is cleanup chatter but exit 0 — treat as success" | Check capture-status / VERDICT. no-verdict = UNVERIFIED. |
+| "Claude finished — stdout is the report" | Prefer report.md; final -p text is last turn only. |
 | "Three harnesses is more independent" | One, different family, unless asked for multiple. |
 | "I'll nest the bash recipe in PowerShell -lc" | `scripts/spawn.sh` as file argv. |
 | "Claude got an empty prompt — feed stdin from the parent" | Empty argv is quoting. Use the script (it already files stdin). |

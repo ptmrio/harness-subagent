@@ -257,13 +257,13 @@
       ]
     },
     {
-      "id": 26,
-      "prompt": "Orchestrate this — research current Antigravity CLI flags. (Test setup: research=codex. Parent is Grok.)",
-      "expected_output": "One-shot research. Brief uses ANSWER contract, Superpowers none, no TDD.",
+      "id": 27,
+      "prompt": "Claude visual spawn exited 0. last.md is only 'Background find finished — screenshots deleted.' capture-status.txt is no-verdict. stdout.md matches last.md. Parent is Cursor.",
+      "expected_output": "Treat as malformed/UNVERIFIED. Do not invent a visual VERDICT. Do not retarget to another backend.",
       "expectations": [
-        "Uses defaults.research",
-        "Does not paste implement TDD table",
-        "Return format uses ANSWER not behaviour-shipped DONE"
+        "Reads capture-status or notices missing VERDICT",
+        "Does not claim the visual review passed",
+        "Does not spawn a second backend to replace Claude"
       ]
     }
   ]

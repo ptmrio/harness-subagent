@@ -6,6 +6,8 @@
 
 **Parent paste rule:** for every spawn, paste into the brief: objective cue, must/must-not, Superpowers map (exact names), **and** the role’s return contract. For `implement` / `implement-ui`, also paste the **full TDD policy table** (not a pointer).
 
+**Report file (all roles):** Write the complete return-contract report to `report.md` in the run directory (same folder as `brief.md`; Claude/agy get this via `--add-dir`) **before any cleanup**. First line must be `VERDICT` (no markdown bold, no leading `**`). `spawn.sh` prefers `report.md` over final stdout so a later cleanup turn cannot wipe the verdict. Shell redirect is fine for Review (Bash allowed; do not edit application files).
+
 ---
 
 ## `code-review` (canonical)
@@ -33,7 +35,8 @@ Aliases: `code-review-task`, `code-review-adversarial`, `code-review-adverserial
 
 **Return contract:**
 ```
-Return with VERDICT as the first line of the report (no preamble):
+Write the complete report to report.md in the run directory (same dir as brief.md) BEFORE any cleanup.
+Return with VERDICT as the first line of the report (no preamble, no markdown bold):
 1. VERDICT — one line.
 2. FINDINGS — ranked most serious first, each with file:line and a concrete failure case.
 3. UNVERIFIED — what you could not check and what you would need.
@@ -66,7 +69,8 @@ Spawn `--mode visual`.
 
 **Return contract:**
 ```
-Return with VERDICT as the first line of the report (no preamble):
+Write the complete report to report.md in the run directory (same dir as brief.md) BEFORE any cleanup.
+Return with VERDICT as the first line of the report (no preamble, no markdown bold):
 1. VERDICT — one line.
 2. FINDINGS — ranked; split into Change vs Holistic UX when both apply; each with file:line or evidence id + concrete failure.
 3. UNVERIFIED — walks/shots you could not do and what you would need.
@@ -103,7 +107,8 @@ Spawn `--mode implement`.
 
 **Return contract:**
 ```
-Return with VERDICT as the first line of the report (no preamble):
+Write the complete report to report.md in the run directory (same dir as brief.md) BEFORE any cleanup.
+Return with VERDICT as the first line of the report (no preamble, no markdown bold):
 1. VERDICT — one line (done / blocked + why).
 2. DONE — files touched and behaviour shipped.
 3. GATES — exact commands run and pass/fail (include one-line why for any TDD skip).
@@ -137,7 +142,8 @@ Demote undated blogspam and **superseded or materially outdated** sources unless
 
 **Return contract:**
 ```
-Return with VERDICT as the first line of the report (no preamble):
+Write the complete report to report.md in the run directory (same dir as brief.md) BEFORE any cleanup.
+Return with VERDICT as the first line of the report (no preamble, no markdown bold):
 1. VERDICT — one line.
 2. ANSWER — bullets with citations (title/URL + date accessed or doc version).
 3. UNVERIFIED — gaps, conflicts, and what would resolve them.
@@ -158,7 +164,8 @@ Spawn `--mode implement` (writes the spec artifact).
 
 **Return contract:**
 ```
-Return with VERDICT as the first line of the report (no preamble):
+Write the complete report to report.md in the run directory (same dir as brief.md) BEFORE any cleanup.
+Return with VERDICT as the first line of the report (no preamble, no markdown bold):
 1. VERDICT — one line (done / blocked + why).
 2. DONE — spec paths written and decisions locked.
 3. GATES — how the human can validate the spec (checklist).
@@ -180,7 +187,8 @@ Spawn `--mode implement`.
 
 **Return contract:**
 ```
-Return with VERDICT as the first line of the report (no preamble):
+Write the complete report to report.md in the run directory (same dir as brief.md) BEFORE any cleanup.
+Return with VERDICT as the first line of the report (no preamble, no markdown bold):
 1. VERDICT — one line (done / blocked + why).
 2. DONE — plan paths written.
 3. GATES — plan self-check (every task has a verification step).
@@ -202,7 +210,8 @@ Spawn `--mode implement`. Alias key: `docs`.
 
 **Return contract:**
 ```
-Return with VERDICT as the first line of the report (no preamble):
+Write the complete report to report.md in the run directory (same dir as brief.md) BEFORE any cleanup.
+Return with VERDICT as the first line of the report (no preamble, no markdown bold):
 1. VERDICT — one line (done / blocked + why).
 2. DONE — prose paths written.
 3. GATES — what was checked (links, factual claims you verified).
@@ -222,7 +231,8 @@ Edit only paths named in the brief. Do not invent citations. Load only writing-s
 
 **Return contract:**
 ```
-Return with VERDICT as the first line of the report (no preamble):
+Write the complete report to report.md in the run directory (same dir as brief.md) BEFORE any cleanup.
+Return with VERDICT as the first line of the report (no preamble, no markdown bold):
 1. VERDICT — one line (root cause / blocked).
 2. FINDINGS — ranked; evidence for the root cause.
 3. UNVERIFIED — what you could not reproduce or would need.

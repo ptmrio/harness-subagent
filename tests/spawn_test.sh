@@ -185,6 +185,7 @@ assert_one "claude review tools allowlist" "--tools Bash\\,Read\\,Glob\\,Grep" "
 assert_none "claude review no Edit" "Edit" "$out"
 assert_none "claude review no Write" "Write" "$out"
 assert_one "claude review --add-dir RUN" "--add-dir $RUN" "$out"
+assert_one "claude review append-system-prompt" "--append-system-prompt" "$out"
 
 expect_ok "dry-run claude implement" \
   --backend claude --mode implement --project "$ROOT" --run "$RUN" --dry-run
@@ -207,7 +208,7 @@ assert_one "codex review approve-for-me" "--approve-for-me" "$out"
 assert_none "codex review no sandbox" "--sandbox" "$out"
 assert_none "codex review no ask-for-approval" "--ask-for-approval" "$out"
 assert_none "codex review no dangerous bypass" "--dangerously-bypass-approvals-and-sandbox" "$out"
-[[ "$out" == *"-o $RUN/last.md -"* ]] && ok "codex -o before -" || fail_msg "codex -o before - ($out)"
+[[ "$out" == *"-o $RUN/stdout.md -"* ]] && ok "codex -o before -" || fail_msg "codex -o before - ($out)"
 
 expect_ok "dry-run codex implement" \
   --backend codex --mode implement --project "$ROOT" --run "$RUN" --dry-run
@@ -226,7 +227,7 @@ assert_none "visual no sandbox" "--sandbox" "$out"
 assert_none "visual no ask-for-approval" "--ask-for-approval" "$out"
 # both -i flags before -o
 img_pos="${out%%-o *}"
-if [[ "$(n_occ " -i $IMG" "$img_pos")" -eq 2 && "$out" == *"-o $RUN/last.md -"* ]]; then
+if [[ "$(n_occ " -i $IMG" "$img_pos")" -eq 2 && "$out" == *"-o $RUN/stdout.md -"* ]]; then
   ok "codex -i before -o"
 else
   fail_msg "codex -i before -o ($out)"
@@ -468,6 +469,71 @@ if [[ "$(cat "$NRUN/last.md")" == "no verdict in this report" ]]; then
   ok "claude last.md unchanged without VERDICT"
 else
   fail_msg "claude no-VERDICT mutated"
+fi
+if [[ "$(cat "$NRUN/capture-status.txt")" == "no-verdict" ]]; then
+  ok "claude capture-status no-verdict"
+else
+  fail_msg "claude capture-status ($(cat "$NRUN/capture-status.txt" 2>/dev/null || true))"
+fi
+
+# report.md wins over cleanup stdout
+cat >"$STUBDIR/claude" <<'EOF'
+#!/bin/bash
+set -euo pipefail
+: "${HS_STUB_DIR:?}"
+run_dir=""
+prev=""
+for a in "$@"; do
+  if [[ "$prev" == "--add-dir" ]]; then run_dir="$a"; fi
+  prev="$a"
+done
+cat >/dev/null
+printf '%s\n' 'VERDICT — from report.' 'FINDINGS — none.' >"$run_dir/report.md"
+printf '%s\n' 'Background find finished — leftover screenshots deleted.'
+EOF
+chmod +x "$STUBDIR/claude"
+make_run
+RRUN="$LAST_TMP"
+run_isolated --backend claude --mode review --project "$ROOT" --run "$RRUN"
+if [[ "$(head -n 1 "$RRUN/last.md")" == "VERDICT — from report." && "$(cat "$RRUN/capture-status.txt")" == "ok-report" ]]; then
+  ok "claude prefers report.md over cleanup stdout"
+else
+  fail_msg "claude report.md prefer (last=$(head -c 200 "$RRUN/last.md" 2>/dev/null || true) status=$(cat "$RRUN/capture-status.txt" 2>/dev/null || true))"
+fi
+
+# markdown-bold VERDICT unwrap
+cat >"$STUBDIR/claude" <<'EOF'
+#!/bin/bash
+set -euo pipefail
+cat >/dev/null
+printf '%s\n' '**VERDICT — bold ok**' 'body'
+EOF
+chmod +x "$STUBDIR/claude"
+make_run
+BRUN="$LAST_TMP"
+run_isolated --backend claude --mode review --project "$ROOT" --run "$BRUN"
+first="$(head -n 1 "$BRUN/last.md")"
+if [[ "$first" == "VERDICT — bold ok" ]]; then
+  ok "claude unwraps bold VERDICT"
+else
+  fail_msg "claude bold VERDICT ($first)"
+fi
+
+# usage limit → BLOCKED VERDICT
+cat >"$STUBDIR/claude" <<'EOF'
+#!/bin/bash
+set -euo pipefail
+cat >/dev/null
+printf '%s\n' "You've hit your session limit · resets 11:30am (Europe/Vienna)"
+EOF
+chmod +x "$STUBDIR/claude"
+make_run
+URUN="$LAST_TMP"
+run_isolated --backend claude --mode review --project "$ROOT" --run "$URUN"
+if [[ "$(head -n 1 "$URUN/last.md")" == "VERDICT — BLOCKED: usage/rate limit" && "$(cat "$URUN/capture-status.txt")" == "usage-limit" ]]; then
+  ok "claude usage-limit becomes BLOCKED VERDICT"
+else
+  fail_msg "claude usage-limit (last=$(head -c 200 "$URUN/last.md" 2>/dev/null || true) status=$(cat "$URUN/capture-status.txt" 2>/dev/null || true))"
 fi
 
 make_run
