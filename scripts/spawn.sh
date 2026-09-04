@@ -72,6 +72,14 @@ esac
 BRIEF="$RUN/brief.md"
 [[ -s "$BRIEF" ]] || die "brief.md missing or empty — refusing to spawn: $BRIEF"
 
+# L2 children must not re-enter this script (parent relaunch arrives with the var unset).
+if [[ -n "${HARNESS_SUBAGENT_RUN-}" ]]; then
+  die "nested spawn refused (already inside HARNESS_SUBAGENT_RUN=$HARNESS_SUBAGENT_RUN)"
+fi
+export HARNESS_SUBAGENT_RUN="$RUN"
+# Official Claude knob: "1" disables nested Agent spawns in the child.
+export CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH=1
+
 if [[ -n "$MODEL" ]] && ! ok_token "$MODEL"; then
   die "invalid --model (allowlisted charset A-Za-z0-9._+-)"
 fi

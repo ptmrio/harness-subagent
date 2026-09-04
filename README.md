@@ -87,6 +87,8 @@ Author defaults (not the protocol):
 
 **Worth a run:** second opinions, adversarial review, visual confirmation, unstuck diagnosis, sustained writing, research lookups, a bounded implement slice assigned to that harness, full orchestrate loops.
 
+The **child is a worker**, not a second orchestrator. Briefs start with `YOU ARE THE WORKER. DO NOT SPAWN`. Do not put `scripts/spawn.sh` flags in the brief.
+
 **Not worth a run:** naming, style, formatting, or anything the parent can already answer from context.
 
 The parent writes a **bounded brief** (named paths and a tight investigation — not a pasted dump), runs `scripts/spawn.sh` in the background, then reports in CTO style (bullets, ASCII when useful):

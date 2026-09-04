@@ -91,6 +91,24 @@ expect_die "self is not a spawn backend" "backend must be" --backend self --proj
 expect_die "orchestrator is not a spawn backend" "backend must be" --backend orchestrator --project "$ROOT" --run "$ROOT"
 expect_die "invalid mode" "mode must be" --backend claude --mode sideways --project "$ROOT" --run "$ROOT"
 
+make_run
+HARNESS_SUBAGENT_RUN="/tmp/hs-parent-run" run_spawn \
+  --backend claude --mode review --project "$ROOT" --run "$LAST_TMP" --dry-run
+if [[ "$ec" -eq 2 && "$err" == *"nested spawn refused"* ]]; then
+  ok "nested spawn refused when HARNESS_SUBAGENT_RUN differs"
+else
+  fail_msg "nested spawn refused (exit=$ec err=${err//$'\n'/ | })"
+fi
+
+make_run
+HARNESS_SUBAGENT_RUN="$LAST_TMP" run_spawn \
+  --backend claude --mode review --project "$ROOT" --run "$LAST_TMP" --dry-run
+if [[ "$ec" -eq 2 && "$err" == *"nested spawn refused"* ]]; then
+  ok "same-run HARNESS_SUBAGENT_RUN refused"
+else
+  fail_msg "same-run HARNESS_SUBAGENT_RUN refused (exit=$ec err=${err//$'\n'/ | })"
+fi
+
 for flag in --backend --mode --project --run --model --effort --image; do
   expect_die "trailing $flag" "missing value for $flag" \
     --backend claude --mode review --project "$ROOT" --run "$ROOT" "$flag"
@@ -320,6 +338,8 @@ set -euo pipefail
 : "${HS_STUB_DIR:?}"
 me="$(basename "$0")"
 printf '%s\n' "$@" >"$HS_STUB_DIR/$me.argv"
+printf '%s\n' "${HARNESS_SUBAGENT_RUN-}" >"$HS_STUB_DIR/$me.runenv"
+printf '%s\n' "${CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH-}" >"$HS_STUB_DIR/$me.depthenv"
 cat >"$HS_STUB_DIR/$me.stdin"
 EOF
 }
@@ -416,6 +436,16 @@ else
   fail_msg "claude live last.md (exit=$ec last=$(cat "$CRUN/last.md" 2>/dev/null || true) log=$(cat "$CRUN/stderr.log" 2>/dev/null || true))"
 fi
 brief_eq "$STUBDIR/claude.stdin" "$CRUN/brief.md" "claude consumed brief on stdin"
+if [[ "$(cat "$STUBDIR/claude.runenv")" == "$CRUN" ]]; then
+  ok "child sees HARNESS_SUBAGENT_RUN"
+else
+  fail_msg "child HARNESS_SUBAGENT_RUN (got=$(cat "$STUBDIR/claude.runenv" 2>/dev/null || true) want=$CRUN)"
+fi
+if [[ "$(cat "$STUBDIR/claude.depthenv")" == "1" ]]; then
+  ok "child CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH=1"
+else
+  fail_msg "child spawn depth (got=$(cat "$STUBDIR/claude.depthenv" 2>/dev/null || true))"
+fi
 
 cat >"$STUBDIR/claude" <<'EOF'
 #!/bin/bash

@@ -265,6 +265,29 @@
         "Does not claim the visual review passed",
         "Does not spawn a second backend to replace Claude"
       ]
+    },
+    {
+      "id": 28,
+      "prompt": "Ask Codex for a visual review of the live admin UI. Parent is Cursor. Config code-review-visual=codex.",
+      "expected_output": "Spawns Codex visual. Brief starts with YOU ARE THE WORKER / DO NOT SPAWN. Does not tell the child to Spawn --mode visual. Child is told not to load harness-subagent.",
+      "expectations": [
+        "Invokes scripts/spawn.sh --backend codex",
+        "Brief includes the child identity fence (YOU ARE THE WORKER / DO NOT SPAWN)",
+        "Brief does not contain Spawn --mode visual as a child instruction",
+        "Does not spawn cursor (parent family)"
+      ]
+    },
+    {
+      "id": 29,
+      "prompt": "Codex visual spawn exited 0. last.md is only 'The configured visual-review backend is Codex, which is the same family as this parent and cannot be auto-selected. Which harness should I spawn?' capture-status.txt is no-verdict. Parent is Cursor.",
+      "expected_output": "Nesting leak, not a review verdict. Rewrite brief with identity fence. Relaunch Codex exactly once. A second identical leak is blocked without another retry. Do not retarget. Do not invent VERDICT FAIL/PASS.",
+      "expectations": [
+        "Does not treat the same-family ask as a visual VERDICT",
+        "Relaunches Codex exactly once with the worker fence",
+        "Does not relaunch a second time if the leak repeats",
+        "Does not spawn claude/grok/agy as a replacement",
+        "Does not invent PASS/FAIL from the ask text"
+      ]
     }
   ]
 }

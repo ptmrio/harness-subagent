@@ -6,12 +6,14 @@ description: >
   Codex, Grok Build, Cursor Agent, Antigravity CLI, Gemini CLI, OpenCode, or Droid — or to ask
   Claude, ask GPT, ask Codex, ask Grok, ask Gemini, get a second opinion, or pressure-test
   a plan or diff from a different harness. Do not use to install those CLIs or
-  to explain their flags.
+  to explain their flags. Do not use if this session was launched by this skill
+  (prompt starts with YOU ARE THE WORKER, or HARNESS_SUBAGENT_RUN is set) — do
+  the briefed job; do not spawn.
 license: MIT
 compatibility: Requires another coding-agent CLI on PATH (claude, codex, grok, agy, and/or cursor-agent). Windows, WSL, Linux, macOS. Git Bash on native Windows.
 metadata:
   author: ptmrio
-  version: "0.2.2"
+  version: "0.2.3"
 ---
 
 # Harness Subagent
@@ -22,11 +24,25 @@ Dispatch **another coding-agent harness** as a one-shot subagent, then synthesiz
 
 **Orchestrator voice:** CTO-level — brief, concise, bullets, ASCII previews when they beat prose. Stay aligned with the human operator (surface assumptions; ask on irreversible actions and unsettled product preferences; do not silently invent scope).
 
-**Sticky route:** If the child hits usage/rate limits (or any soft failure that tempts a swap), do **not** retarget another backend or model. Report the failure, mark UNVERIFIED / blocked, ask once. In a **full orchestrate loop**, stop the checklist — do **not** continue to later stages without the failed stage’s deliverable (e.g. no Implement if Practices died on a limit).
+**Sticky route:** If the child hits usage/rate limits (or any soft failure that tempts a swap), do **not** retarget another backend or model. Report the failure, mark UNVERIFIED / blocked, ask once. Exception: a `no-verdict` same-family / “which harness” ask is a **nesting leak** — rewrite the identity fence, relaunch **once**, same backend; do not ask and do not swap. In a **full orchestrate loop**, stop the checklist — do **not** continue to later stages without the failed stage’s deliverable (e.g. no Implement if Practices died on a limit).
 
 Do **not** pick a harness because of a task stereotype unless the **user config** has that key (see [references/user-config.md](references/user-config.md)). Routing order: **this utterance → user config → ask once.** Same protocol for every backend. Role personality and Superpowers maps: [references/roles.md](references/roles.md) (**canonical**).
 
 Default to **Review** (do not edit application files). Allow application writes only when the user (or an approved plan) asks for Implement. Review and Visual may create temp files and write reports.
+
+## Command levels (do not mix)
+
+This skill is **one-shot**. The child must not re-enter it. Vendor CLIs may allow nested Agent/`spawn_agent`; that is not a license to run this protocol again.
+
+| Level | Who | Commands | Forbidden as “yours” |
+|---|---|---|---|
+| **L0** | Human | `/harness-subagent`, “orchestrate”, named harness, pin `self` | `spawn.sh` flags |
+| **L1** | Parent that loaded this skill | `scripts/spawn.sh --backend --mode`, config routing, same-family skip, ask once, synthesize | Putting spawn.sh invocations **in the brief**; asking the child which harness |
+| **L2** | CLI `spawn.sh` launched | Role Superpowers only, Playwright / named shots, `report.md` | This skill, `spawn.sh`, `requesting-code-review`, “which harness?”, same-family ask |
+
+L1 invokes `scripts/spawn.sh --mode …`. That argv is **not** a child instruction. If you are L2 (`HARNESS_SUBAGENT_RUN` set, or the prompt starts `YOU ARE THE WORKER`), **stop reading this spawn protocol** and do the briefed job.
+
+`spawn.sh` exports `HARNESS_SUBAGENT_RUN` and sets `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH=1`. A nested `spawn.sh` dies (var already set).
 
 ## Orchestrate vs one-shot
 
@@ -125,7 +141,7 @@ Spawn pins Auto-equivalent permission: Claude/Grok `--permission-mode auto`. Cod
 0. **Gate.** Name the one thing you cannot answer from this repo / this context. If you cannot name it, do not spawn — **unless this utterance already named a harness** (utterance still wins; `writer=self` does not suppress “Ask Claude to rewrite the README”). Naming, style, formatting, and “already tried” that already is the answer are not worth a run. **Sustained writer/research** (a README rewrite, a competitive lookup) is not “naming”: spawn when the **resolved route** is a CLI.
 1. Write `brief.md` under the temp run dir (never inside the repo).
 2. Spawn **`scripts/spawn.sh` in the background** (minutes; a foreground timeout kills spend). Do not copy or edit the script.
-3. Wait until the **process exits**. Then read `$RUN/last.md` and `$RUN/capture-status.txt`. Process still running + no `VERDICT` yet → not done. `spawn.sh` already prefers `$RUN/report.md` over final stdout and normalizes bold/`VERDICT:` lines. If status is `usage-limit` or `no-verdict`, mark the harness UNVERIFIED / blocked — do **not** invent a verdict and do **not** retarget backends (sticky route). Do not relaunch a finished job because of a preamble.
+3. Wait until the **process exits**. Then read `$RUN/last.md` and `$RUN/capture-status.txt`. Process still running + no `VERDICT` yet → not done. `spawn.sh` already prefers `$RUN/report.md` over final stdout and normalizes bold/`VERDICT:` lines. If status is `usage-limit` or `no-verdict`, mark the harness UNVERIFIED / blocked — do **not** invent a verdict and do **not** retarget backends (sticky route). Exception: `no-verdict` that is a same-family / “which harness” ask is a **nesting leak** — rewrite the identity fence and relaunch **once** (same backend). Do not relaunch a finished job because of a preamble.
 4. Synthesize — never paste-only.
 
 ### Write the brief
@@ -138,13 +154,14 @@ Task description, not a data dump. **Do not paste diffs or file contents** — n
 - Put parent evidence under **What was already tried**. Prefer “verify this” over “rediscover.” If you already ran `gh`/`curl` and Codex Review may lack network, put the output here and forbid re-running those commands.
 - **Product override:** if the user locked a product decision, say so.
 
-Five parts, in order:
+Six parts, in order:
 
-1. **Objective** — one sentence naming the verdict / deliverable (role card objective cue).
-2. **Where to look** — paths, bounded commands, symbols; edit allowlist if Implement.
-3. **What was already tried**
-4. **What would change my mind** — settling evidence (Review) or acceptance gates (Implement).
-5. **Return format** — paste from [references/roles.md](references/roles.md): the role’s **return contract** (includes **write `report.md` before cleanup**), Superpowers map (exact names), must/must-not, and for implement/implement-ui the **full TDD policy table** (never “see roles.md” alone). Role card wins over any older stub wording. Name the run-dir path for `report.md` when the child cannot infer it.
+1. **Child identity fence** — paste first, verbatim, from [references/roles.md](references/roles.md). Never write `scripts/spawn.sh` or `--mode visual` in the brief (L2 treats that as an order to re-orchestrate).
+2. **Objective** — one sentence naming the verdict / deliverable (role card objective cue).
+3. **Where to look** — paths, bounded commands, symbols; edit allowlist if Implement.
+4. **What was already tried**
+5. **What would change my mind** — settling evidence (Review) or acceptance gates (Implement).
+6. **Return format** — paste from [references/roles.md](references/roles.md): the role’s **return contract** (includes **write `report.md` before cleanup**), Superpowers map (exact names), must/must-not, and for implement/implement-ui the **full TDD policy table** (never “see roles.md” alone). Role card wins over any older stub wording. Name the run-dir path for `report.md` when the child cannot infer it. Mode mapping lives in [user-config.md](references/user-config.md), not in the brief.
 
 ### Postures → role cards
 
@@ -180,6 +197,7 @@ Cheap-check claims (`file:line` exists; tests actually fail). For Implement: fil
 - One wait sized to expected runtime (Codex review often 5–15 min). Do not poll `last.md` every couple of minutes. Do not start a second `spawn.sh` for the same `--run` while the first process is still alive. Process still running + empty `last.md` → not done.
 - **Do not kill** because stderr is noisy or mentions `git`. Kill only if the process is dead **and** the report file is empty/stale, or there is no growth and no process activity for a long stretch.
 - If a Visual run starts unbounded git: kill, rewrite the brief with the forbid line, relaunch **once**.
+- If `last.md` is a same-family / “which harness should I spawn” ask (`no-verdict`, no `VERDICT`): **nesting leak** (L2 ran this skill). Rewrite the brief with the identity fence, relaunch **once**, **same** backend. Do not retarget (sticky). Do not invent a verdict.
 - Native Windows: Git Bash file argv. WSL `bash.exe` cannot see `%TEMP%` as `/c/…`. Do not mix them.
 
 ### Red flags
@@ -208,5 +226,8 @@ Cheap-check claims (`file:line` exists; tests actually fail). For Implement: fil
 | "Spawn failed — try another quoting trick" | Two failures then stop. |
 | "Config says cursor and I am Cursor Agent" | Same-family skip. Pin `self` when the orchestrator should do that job. |
 | "I'll poll last.md until it appears" | One wait sized to runtime. Process + empty last.md = not done. |
+| "I'll paste spawn.sh --mode visual into the brief so the child knows the mode" | L1-only argv. Child treats that as an order to spawn. Fence goes in the brief; spawn.sh flags never do. |
+| "Child asked which harness — same-family rule working" | L2 leak. Fence, relaunch once, same backend. Do not retarget. |
+| "Config says Codex and the child is Codex, so it should ask" | Child already is the worker. Ignore config. Do the job. |
 | "I'll call spawn.sh from a different clone than this SKILL.md" | Wrong tree. Use the loaded skill dir. |
 | "agy last.md says done, the app shipped" | List `--project`. If empty, the files are in `$RUN` (`--add-dir` on Implement). That is not a pass. |

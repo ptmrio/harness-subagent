@@ -17,6 +17,8 @@ The script feeds the brief as **file stdin** (`< "$RUN/brief.md"`). Multiline ar
 | `--add-dir "$RUN"` | Lets Read/Bash see the brief/screenshots and write `report.md` outside the project tree. |
 | `--append-system-prompt …` | Spawn script requires writing `report.md` before cleanup (final `-p` text is **last turn only**). |
 
+`scripts/spawn.sh` exports `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH=1` so the child cannot nest Claude Agent spawns ([official](https://code.claude.com/docs/en/sub-agents): `"1"` disables nesting). Do not raise it for an L2 worker.
+
 Images: name paths in the brief. `spawn.sh --image` is ignored for Claude. Copy screenshots into `$RUN`.
 
 ## Capture hardening
@@ -28,6 +30,6 @@ Claude `-p --output-format text` emits only the **final assistant message**. A c
 3. `finalize_capture` prefers `report.md` when it contains `VERDICT`, else stdout → `$RUN/last.md`.
 4. Bold `**VERDICT` / `VERDICT:` normalized; usage/session-limit text becomes `VERDICT — BLOCKED: usage/rate limit` with `capture-status.txt=usage-limit`.
 
-If `capture-status.txt` is `usage-limit` or `no-verdict`: do **not** relaunch Claude immediately and do **not** retarget backends (sticky route). Ask once / wait for the stated reset.
+If `capture-status.txt` is `usage-limit` or a generic `no-verdict`: do **not** relaunch Claude immediately and do **not** retarget backends (sticky route). Ask once / wait for the stated reset. Exception: a `no-verdict` same-family / “which harness” ask is a nesting leak — rewrite the identity fence, relaunch **once**, same backend (see SKILL.md).
 
 If a gate needs a host binary Git Bash / `--tools` cannot run (e.g. `powershell.exe` on native Windows), the **parent** runs it or the finding stays UNVERIFIED.

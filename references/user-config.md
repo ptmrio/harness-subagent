@@ -49,7 +49,7 @@ Aliases (same card / lookup): `code-review-task` → `code-review`; `code-review
 
 The **skill** still has no author job→harness map. These keys are the **user** speaking in advance. `assets/config.example.toml` is a suggestion; copy and change it. Personality for each key: [roles.md](roles.md).
 
-`code-review-visual`: do **not** put “forbid a browser stack” in the brief. Name Playwright (or the parent’s shots). Codex: `spawn.sh --mode visual` and `--image` per screenshot. Claude/agy: `--mode visual` runs as Review (brief: do not edit application files); shots via `--add-dir` / named paths. agy Implement still omits `--add-dir`. Default identity is holistic user-walk; screenshots-only is fallback.
+`code-review-visual`: do **not** put “forbid a browser stack” in the brief. Name Playwright (or the parent’s shots). Codex: parent runs `spawn.sh --mode visual` and `--image` per screenshot — do **not** write `Spawn --mode visual` in the brief. Claude/agy: `--mode visual` runs as Review (brief: do not edit application files); shots via `--add-dir` / named paths. agy Implement still omits `--add-dir`. Default identity is holistic user-walk; screenshots-only is fallback.
 
 ### Self-class values
 
