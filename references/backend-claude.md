@@ -13,7 +13,7 @@ The script feeds the brief as **file stdin** (`< "$RUN/brief.md"`). Multiline ar
 | `--tools` | Review: `Bash,Read,Glob,Grep` (Bash is how Review writes `report.md` / temp files). Implement adds `Edit,Write`. |
 | `--model opus` | Skill policy default (series alias) unless the user or config pins. |
 | `--effort xhigh` | `low` `medium` `high` `xhigh` `max`. |
-| `--no-session-persistence` | One-shot; do not clutter resume history. |
+| `--session-id "$SID"` | Fresh launch: preassigned lowercase UUID, saved before launch. Persistence remains enabled. |
 | `--add-dir "$RUN"` | Lets Read/Bash see the brief/screenshots and write `report.md` outside the project tree. |
 | `--append-system-prompt …` | Spawn script requires writing `report.md` before cleanup (final `-p` text is **last turn only**). |
 
@@ -30,8 +30,14 @@ Claude `-p --output-format text` emits only the **final assistant message**. A c
 1. Child must write `$RUN/report.md` (brief + append-system-prompt).
 2. Raw stdout lands in `$RUN/stdout.md`.
 3. `finalize_capture` prefers `report.md` when it contains `VERDICT`, else stdout → `$RUN/last.md`.
-4. Bold `**VERDICT` / `VERDICT:` normalized; usage/session-limit text becomes `VERDICT — BLOCKED: usage/rate limit` with `capture-status.txt=usage-limit`.
+4. Returned nonzero CLI exits still finalize and retain their exit status. Bold `**VERDICT` / `VERDICT:` normalize. When selected text has no verdict, scan raw stdout and stderr before handling empty output. Limit diagnostics become `VERDICT — BLOCKED: usage/rate limit` with `capture-status.txt=usage-limit`, labeled sources, and reset/retry evidence. Valid selected verdicts retain precedence.
 
-If `capture-status.txt` is `usage-limit` or a generic `no-verdict`: do **not** relaunch Claude immediately and do **not** retarget backends (sticky route). Ask once / wait for the stated reset. Exception: a `no-verdict` same-family / “which harness” ask is a nesting leak — rewrite the identity fence, relaunch **once**, same backend (see SKILL.md).
+Done means the process exited and capture artifacts exist. Success additionally requires the CLI exit status and report verdict to support success. Read `last.md`, `capture-status.txt`, and process status together; `ok` / `ok-report` describe capture, not job success. A valid report with a nonzero exit requires parent review. Generic non-limit errors remain `no-verdict` failures.
+
+For `usage-limit`, inspect preserved stdout/stderr evidence. Subscription/session exhaustion: parent waits for the stated reset, retaining timezone. Transient 429 / Too Many Requests without stronger spend/quota evidence: short backoff, honoring retry hints. Insufficient credits, spend caps, or exhausted paid quota: ask the human before enabling spend; explicit spend evidence overrides generic 429. Ambiguous quota without reliable cause/reset: report evidence and ask once. Do not invent timing, purchase credits, or retry indefinitely. Keep backend/model and route pins sticky and stop dependent stages; spawn does not sleep or launch a sleeper. Exception: a `no-verdict` same-family / “which harness” ask is a nesting leak — rewrite the identity fence, relaunch **once**, same backend (see SKILL.md).
 
 If a gate needs a host binary Git Bash / `--tools` cannot run (e.g. `powershell.exe` on native Windows), the **parent** runs it or the finding stays UNVERIFIED.
+
+Persistence: `session-id` and `session.json` bind the native `session_id`, resolved cwd, originating/attempt run, mode, model, and effort. `preassigned: true` records intent, not proof of provider persistence. If `CLAUDE_CODE_SKIP_PROMPT_HISTORY` is set (even empty), spawn records persistence unavailable and leaves the environment unchanged. Python 3 (`python` or `python3`) is checked for JSON metadata; UUID generation tries `uuidgen`, Python uuid4, then PowerShell `[guid]::NewGuid()`. Dry-run prints a planned ID without publishing identity files or starting Claude.
+
+Exact resume: parent follows SKILL.md's wait/checkpoint protocol, copies the two identity records to a separate attempt, and writes a short continuation to that attempt's `brief.md`. `spawn.sh --resume-id "$SID"` validates records/cwd/route/role and emits `--resume "$SID"` instead of `--session-id`. It re-passes `-p`, permission-mode, tools, model, effort, `--add-dir "$RUN"`, and append-system-prompt; the continuation remains file stdin. No `--continue`, bare `--resume`, or `--fork-session`. Missing/mismatched ID or disabled history blocks before launch. Provider rejection is nonzero/BLOCKED, never a fresh-thread retry. Keep the original report in its original slot and write the new complete report before cleanup.

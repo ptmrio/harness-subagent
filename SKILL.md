@@ -13,7 +13,7 @@ license: MIT
 compatibility: Requires another coding-agent CLI on PATH (claude, codex, grok, agy, and/or cursor-agent). Windows, WSL, Linux, macOS. Git Bash on native Windows.
 metadata:
   author: ptmrio
-  version: "0.2.4"
+  version: "0.2.5"
 ---
 
 # Harness Subagent
@@ -24,7 +24,7 @@ Dispatch **another coding-agent harness** as a one-shot subagent, then synthesiz
 
 **Orchestrator voice:** CTO-level — brief, concise, bullets, ASCII previews when they beat prose. Stay aligned with the human operator (surface assumptions; ask on irreversible actions and unsettled product preferences; do not silently invent scope).
 
-**Sticky route:** If the child hits usage/rate limits (or any soft failure that tempts a swap), do **not** retarget another backend or model. Report the failure, mark UNVERIFIED / blocked, ask once. Exception: a `no-verdict` same-family / “which harness” ask is a **nesting leak** — rewrite the identity fence, relaunch **once**, same backend; do not ask and do not swap. In a **full orchestrate loop**, stop the checklist — do **not** continue to later stages without the failed stage’s deliverable (e.g. no Implement if Practices died on a limit).
+**Sticky route:** If the child hits usage/rate limits (or any soft failure that tempts a swap), do **not** retarget another backend or model. Mark UNVERIFIED / blocked and preserve route pins. The parent owns waiting and retry decisions. For subscription/session exhaustion, wait for the stated reset, retaining timezone. For transient HTTP 429 / Too Many Requests without stronger spend/quota evidence, use short backoff and honor any retry hint. Insufficient credits, spend caps, or exhausted paid quota require asking the human before enabling spend; explicit spend evidence overrides generic 429. For ambiguous quota without a reliable cause/reset, report the evidence and ask once. Do not invent reset values, purchase credits, or retry indefinitely. Spawn does not sleep or launch a sleeper. Exception: a `no-verdict` same-family / “which harness” ask is a **nesting leak** — rewrite the identity fence, relaunch **once**, same backend; do not ask and do not swap. In a **full orchestrate loop**, stop dependent stages until the failed stage has a deliverable.
 
 Do **not** pick a harness because of a task stereotype unless the **user config** has that key (see [references/user-config.md](references/user-config.md)). Routing order: **this utterance → user config → ask once.** Same protocol for every backend. Role personality and Superpowers maps: [references/roles.md](references/roles.md) (**canonical**).
 
@@ -59,7 +59,7 @@ L1 invokes `scripts/spawn.sh --mode …`. That argv is **not** a child instructi
 3. **Validate** — `code-review` (adversarial). Add `code-review-visual` when UI is in play.
 4. **Final coherence** — parent default `self` (or one short Review spawn): logic, redundancy, overall sanity vs the two anchors and the original ask.
 
-If any stage is blocked (including sticky-route limits), **stop** and ask — do not skip ahead.
+If any stage is blocked, **stop** dependent stages and follow the sticky-route evidence and parent wait rules — do not skip ahead.
 
 ## Pick a backend
 
@@ -143,8 +143,27 @@ Spawn pins Auto-equivalent permission: Claude/Grok `--permission-mode auto`. Cod
 0. **Gate.** Name the one thing you cannot answer from this repo / this context. If you cannot name it, do not spawn — **unless this utterance already named a harness** (utterance still wins; `writer=self` does not suppress “Ask Claude to rewrite the README”). Naming, style, formatting, and “already tried” that already is the answer are not worth a run. **Sustained writer/research** (a README rewrite, a competitive lookup) is not “naming”: spawn when the **resolved route** is a CLI.
 1. Write `brief.md` under the temp run dir (never inside the repo).
 2. Spawn **`scripts/spawn.sh` in the background** (minutes; a foreground timeout kills spend). Do not copy or edit the script.
-3. Wait until the **process exits**. Then read `$RUN/last.md` and `$RUN/capture-status.txt`. Process still running + no `VERDICT` yet → not done. `spawn.sh` already prefers `$RUN/report.md` over final stdout and normalizes bold/`VERDICT:` lines. If status is `usage-limit` or `no-verdict`, mark the harness UNVERIFIED / blocked — do **not** invent a verdict and do **not** retarget backends (sticky route). Exception: `no-verdict` that is a same-family / “which harness” ask is a **nesting leak** — rewrite the identity fence and relaunch **once** (same backend). Do not relaunch a finished job because of a preamble.
+3. Wait until the **process exits**. Read its exit status, `$RUN/last.md`, and `$RUN/capture-status.txt` together. Done means the process exited and capture artifacts exist; success additionally requires the CLI status and report verdict to support success. `ok` / `ok-report` describe capture only. A valid report with a nonzero exit requires parent review, never an automatic pass. Process still running + no `VERDICT` yet → not done. `spawn.sh` prefers `$RUN/report.md` over final stdout and normalizes bold/`VERDICT:` lines. Returned nonzero exits still finalize. If selected text has no verdict, stdout and stderr are scanned before empty-output handling. Valid selected verdicts retain precedence. Generic non-limit errors remain `no-verdict` failures. For `usage-limit`, read the labeled evidence and follow the sticky-route parent actions above. For `no-verdict`, mark UNVERIFIED / blocked; do not invent success. Exception: a same-family / “which harness” ask is a **nesting leak** — rewrite the identity fence and relaunch **once** (same backend). Do not relaunch a finished job because of a preamble.
 4. Synthesize — never paste-only.
+
+### Persistence, parent wait, and exact resume
+
+`report.md` is the durable checkpoint and must be written before cleanup. Session history adds conversation context; it does not replace the report, prove success, or guarantee exactly-once tool effects. `spawn.sh` checks Python 3 (`python` or `python3`, no jq) for metadata and provider JSONL. Claude/Grok preassign a lowercase UUID and write `session-id` plus `session.json` before launch. Codex saves the first `thread.started.thread_id`; agy saves `init.conversation_id`, including when the CLI exits before a final response. Raw JSONL goes to `events.jsonl`, decoded provider errors to the labeled `provider-errors.log`, and human text to `stdout.md`/`last.md`. Parser errors finalize BLOCKED captures and exit nonzero; they do not replace a `usage-limit` classification. Dry-run publishes no provider identity.
+
+The identity records must agree on backend, exact native ID, resolved original `--project` cwd, model/effort pins, and role. `session.json` records `native_key`, `id`, the native key (`session_id`, `thread_id`, or `conversation_id`), `origin_run`, `attempt_run`, and `preassigned`. A preassigned ID records intent, not proof of persistence. Missing/empty IDs, disagreement, or `persistence_available: false` mean resume unavailable. Claude's `CLAUDE_CODE_SKIP_PROMPT_HISTORY` being set makes persistence unavailable; do not silently override it.
+
+Before yielding for reset/backoff, durably record original run/report paths, backend, exact ID or explicit unavailability, resolved cwd, model/effort and role pins, blocked reason and raw evidence, known reset/retry time with timezone (or unknown), and next action. The parent owns this wait record and the wait; spawn never sleeps, retry-loops, launches a sleeper, or swaps routes.
+
+After the reset/backoff or human credits decision, confirm the previous process exited. Allow at most one active attempt per job. Create a separate attempt directory and copy only the prior `session-id` and `session.json` identity records there. Preserve the prior artifacts. Do not copy the old `report.md` into the new attempt's report slot. Write the short continuation into the new attempt's **`brief.md`** (the executable handoff uses this filename; no extra prompt flag). It must tell the worker to continue unfinished work, read the prior durable report at its explicit path, reconcile it with actual work before repeating effects, retain scope/role/tool restrictions and the worker/no-spawn fence, and write a complete updated report to this attempt before cleanup. Do not replay the full original brief.
+
+```bash
+bash scripts/spawn.sh --backend "$BACKEND" --mode "$MODE" \
+  --project "$ORIGINAL_PROJECT" --run "$ATTEMPT" \
+  --model "$PINNED_MODEL" --effort "$PINNED_EFFORT" \
+  --resume-id "$SID"
+```
+
+For an unpinned agy model, omit `--model` on both attempts; otherwise re-pass the original model/effort pins. Spawn requires a full lowercase canonical UUID and both copied records; mismatched backend/cwd/pins, junk in `session-id`, missing records, or unavailable persistence produces BLOCKED evidence and a nonzero exit without launching the provider. Exact resume rejection remains BLOCKED; there is no silent fresh-thread fallback. Codex/agy observed identity must match the requested ID, including an empty Codex event stream; agy also blocks a reported `num_turns == 1`. Never use `--continue`, `--last`, bare `--resume`, session-selection `-c`, or `--fork-session`. Codex `-c model_reasoning_effort=…` is configuration and stays. A fresh run from the checkpoint is a separate explicit recovery decision, never represented as successful resume. A repeated limit returns another BLOCKED capture to the parent.
 
 ### Write the brief
 
@@ -194,7 +213,7 @@ Cheap-check claims (`file:line` exists; tests actually fail). For Implement: fil
 ### Hang / progress hygiene
 
 - Capture stderr to `$RUN/stderr.log` (the script does this). Codex transcripts are large — normal, not a hang.
-- **Done** = `spawn.sh` has exited **and** `$RUN/last.md` exists. Do not treat a missed `AwaitShell` regex (`exit_code`) as done or as a hang — Cursor terminal footers often do not match that pattern.
+- **Done** = `spawn.sh` has exited and capture artifacts exist. **Success** also requires its exit status and verdict to support success. Do not treat a missed `AwaitShell` regex (`exit_code`) as done or as a hang — Cursor terminal footers often do not match that pattern.
 - After background spawn: one smoke check (`ls` / `Get-ChildItem` on `$RUN`). After **agy Implement** also list `--project` (the app must land there, not in `$RUN`). Optional notify on stderr `session id:` / `OpenAI Codex` means **started**, not done.
 - One wait sized to expected runtime (Codex review often 5–15 min). Do not poll `last.md` every couple of minutes. Do not start a second `spawn.sh` for the same `--run` while the first process is still alive. Process still running + empty `last.md` → not done.
 - **Do not kill** because stderr is noisy or mentions `git`. Kill only if the process is dead **and** the report file is empty/stale, or there is no growth and no process activity for a long stretch.
@@ -213,10 +232,10 @@ Cheap-check claims (`file:line` exists; tests actually fail). For Implement: fil
 | "Harness must be read-only" | Review must not edit application files; temp/report writes are allowed. Implement may edit when the brief says so. |
 | "This task wants Codex / Opus / Grok" | Utterance, then config, then ask. No task map. |
 | "Astra/Fable is now latest — change the skill default" | Policy default stays until the user pins it. Series name this turn is a model pin only. |
-| "Child hit a usage limit — switch models" | Sticky route. Do not retarget. Report and ask once. Stop later orchestrate stages. |
+| "Child hit a usage limit — switch models" | Sticky route. Read labeled limit evidence; parent waits for reset/backoff or asks about spend/ambiguous quota. Stop dependent stages. |
 | "Orchestrate this — second opinion" means full loop | Single-job narrowing → one-shot review. |
 | "Full loop using Codex" is one-shot because Codex is named | Explicit full-loop language wins; harness only pins backends. |
-| "Practices failed limits — continue to Implement" | Stop the checklist. Ask once. |
+| "Practices failed limits — continue to Implement" | Stop dependent stages. Apply the parent wait rules to the preserved evidence. |
 | "last.md is cleanup chatter but exit 0 — treat as success" | Check capture-status / VERDICT. no-verdict = UNVERIFIED. |
 | "Claude finished — stdout is the report" | Prefer report.md; final -p text is last turn only. |
 | "Three harnesses is more independent" | One, different family, unless asked for multiple. |
