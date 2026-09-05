@@ -317,12 +317,31 @@ assert_one "model sonnet" "--model sonnet" "$out"
 assert_one "effort high" "--effort high" "$out"
 assert_one "model/effort one permission-mode" "--permission-mode" "$out"
 
+expect_ok "dry-run claude unpinned policy default opus" \
+  --backend claude --project "$ROOT" --run "$RUN" --dry-run
+assert_one "claude default opus" "--model opus" "$out"
+
+expect_ok "dry-run claude version-pin fable 5.1" \
+  --backend claude --project "$ROOT" --run "$RUN" --model claude-fable-5-1 --dry-run
+assert_one "claude-fable-5-1" "--model claude-fable-5-1" "$out"
+
+expect_die "bracketed model alias rejected" "invalid --model" \
+  --backend claude --project "$ROOT" --run "$RUN" --model 'fable[1m]' --dry-run
+
 expect_ok "dry-run codex --effort in -c" \
   --backend codex --project "$ROOT" --run "$RUN" --model gpt-5.6-sol --effort xhigh --dry-run
 assert_one "codex model" "-m gpt-5.6-sol" "$out"
 assert_one "codex effort -c" "-c model_reasoning_effort=xhigh" "$out"
 assert_one "codex default-mode review approve-for-me" "--approve-for-me" "$out"
 assert_none "codex default-mode review no sandbox" "--sandbox" "$out"
+
+expect_ok "dry-run codex unpinned policy default sol" \
+  --backend codex --project "$ROOT" --run "$RUN" --dry-run
+assert_one "codex default sol" "-m gpt-5.6-sol" "$out"
+
+expect_ok "dry-run codex optional astra" \
+  --backend codex --project "$ROOT" --run "$RUN" --model gpt-6-astra --dry-run
+assert_one "codex astra" "-m gpt-6-astra" "$out"
 
 # --- live PATH stubs (fail closed if stubs missing) ---
 

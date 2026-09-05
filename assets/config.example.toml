@@ -22,8 +22,8 @@ code-review-visual = "codex"   # Playwright / live UI + shots; holistic user-wal
 # Extra keys are optional named labels. Used only when you say that word this turn.
 
 [models]
-claude = "opus"
-codex = "gpt-5.6-sol"
+claude = "opus"            # replace with "fable" for Fable 5.1 (Claude Code >= 2.1.255; older CLIs still resolve fable to Fable 5)
+codex = "gpt-5.6-sol"      # replace with "gpt-6-astra" to pin Astra (forward on older Codex; 0.153.1+ is first-class metadata)
 grok = "grok-4.6"
 
 [effort]

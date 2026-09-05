@@ -288,6 +288,40 @@
         "Does not spawn claude/grok/agy as a replacement",
         "Does not invent PASS/FAIL from the ask text"
       ]
+    },
+    {
+      "id": 30,
+      "prompt": "Ask Fable to review this diff. Parent is Cursor. Config models.claude = \"opus\".",
+      "expected_output": "Spawns Claude with --model fable (series pin). Does not use the opus policy default. Does not spawn cursor.",
+      "expectations": [
+        "Invokes scripts/spawn.sh --backend claude --mode review",
+        "Passes --model fable into spawn.sh",
+        "Does not pass --model opus",
+        "Does not spawn cursor (parent family)"
+      ]
+    },
+    {
+      "id": 31,
+      "prompt": "Ask Astra to review this. Parent is Cursor. This machine's `codex debug models --bundled` does not list gpt-6-astra. Config models.codex = \"gpt-5.6-sol\".",
+      "expected_output": "Spawns Codex with --model gpt-6-astra. Does not skip because the bundled list is stale. Does not fall back to gpt-5.6-sol. Does not spawn cursor.",
+      "expectations": [
+        "Invokes scripts/spawn.sh --backend codex --mode review",
+        "Passes --model gpt-6-astra into spawn.sh",
+        "Does not pass --model gpt-5.6-sol",
+        "Does not refuse because bundled list omitted Astra",
+        "Does not spawn cursor (parent family)"
+      ]
+    },
+    {
+      "id": 32,
+      "prompt": "Ask Codex to review this. I did not name Astra or Sol. Parent is Cursor. Config models.codex = \"gpt-5.6-sol\". Codex CLI 0.153.4 bundled default is Astra.",
+      "expected_output": "Spawns Codex with the skill/config policy default gpt-5.6-sol. Does not switch to gpt-6-astra because OpenAI made it the bundled default.",
+      "expectations": [
+        "Invokes scripts/spawn.sh --backend codex",
+        "Passes --model gpt-5.6-sol into spawn.sh",
+        "Does not pass --model gpt-6-astra",
+        "Does not spawn cursor (parent family)"
+      ]
     }
   ]
 }

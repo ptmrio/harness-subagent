@@ -49,6 +49,8 @@ That runs: two vendor practice anchors (Anthropic + OpenAI) → implement → ad
 - *You write the spec; ask Codex to pressure-test the plan.* (Two jobs → two spawns or parent+spawn.)
 - *Get a visual review from Codex of the screenshots I just took.*
 - *Ask Grok Build to try to refute this plan.*
+- *Ask Fable to review this diff.* (Claude; pins `--model fable` — Fable 5.1 on Claude Code ≥2.1.255)
+- *Ask Astra to review this diff.* (Codex; pins `--model gpt-6-astra`)
 - *Ask Codex from Claude Code* / *have Grok Build invoke Claude Code.*
 
 **Avoid**

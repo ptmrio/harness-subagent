@@ -7,12 +7,14 @@ Parents must spawn via [scripts/spawn.sh](../scripts/spawn.sh) (`--backend codex
 | Part | Why |
 |---|---|
 | `--approve-for-me` | All modes — classifier Auto. Do not also pass `--sandbox`. |
-| `-m gpt-5.6-sol` | Current bundled default series. List: `codex debug models --bundled`. |
-| `-c model_reasoning_effort=xhigh` | `minimal` `low` `medium` `high` `xhigh`. |
+| `-m gpt-5.6-sol` | Skill policy default. List what this CLI has: `codex debug models --bundled`. |
+| `-c model_reasoning_effort=xhigh` | `minimal` `low` `medium` `high` `xhigh` (`max` on Astra). |
 | `--skip-git-repo-check` | Always in this protocol (temp dirs, odd checkouts). |
 | `--ephemeral` | No session files. |
 | `-o` | Last message to file (also printed on stdout). |
 | `- < brief.md` | Official prompt-from-file. Do **not** also pass an argv prompt. |
+
+**Optional Astra:** utterance `Astra` (or config / `--model`) pins `-m gpt-6-astra`. Do not gate the pin on this machine’s bundled list. Do not silently fall back to Sol. Codex CLI **0.153.1+** adds first-class metadata (picker + bundled default on **0.153.4+**); older CLIs still forward the slug and may warn / attach generic metadata, then fail at the API if the account/rollout does not include Astra. Official: [Codex Models](https://learn.chatgpt.com/docs/models), [GPT-6 Astra](https://developers.openai.com/api/docs/models/gpt-6-astra), changelog 0.153.1 / 0.153.4 (accessed 2026-09-05).
 
 `--ignore-user-config` when you must not inherit a drifted `~/.codex/config.toml`. Auth still uses `CODEX_HOME`.
 

@@ -69,7 +69,7 @@ Unknown `[models]` / `[effort]` keys for extra CLIs are optional; those backends
 
 ## Routing
 
-1. This utterance — named harness, pinned model id, **or** parent-should-do-it this turn (“you do it”, “don’t spawn”, “stay here”).
+1. This utterance — named harness, pinned model id **or series alias** (`Fable`→`fable`, `Astra`→`gpt-6-astra`, `Opus`/`Sol`/`Terra`/`Luna`/… — see SKILL.md series pin), **or** parent-should-do-it this turn (“you do it”, “don’t spawn”, “stay here”). A series name pins `--model`; it does not change the skill policy default for generic `Claude`/`Codex` later.
 2. This file — pick the matching known key (or a named extra key the user said). If the value is self-class, stop: do the job here. Else **skip any backend that is the parent’s own family**. If nothing remains, ask once.
 3. Ask once.
 

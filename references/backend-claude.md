@@ -11,11 +11,13 @@ The script feeds the brief as **file stdin** (`< "$RUN/brief.md"`). Multiline ar
 | `-p` | Headless one-shot. Without it you get the TUI. |
 | `--permission-mode auto` | Classifier verifies, then allows. Review still omits Edit/Write in `--tools`. |
 | `--tools` | Review: `Bash,Read,Glob,Grep` (Bash is how Review writes `report.md` / temp files). Implement adds `Edit,Write`. |
-| `--model opus` | Series alias unless the user or config pins. |
+| `--model opus` | Skill policy default (series alias) unless the user or config pins. |
 | `--effort xhigh` | `low` `medium` `high` `xhigh` `max`. |
 | `--no-session-persistence` | One-shot; do not clutter resume history. |
 | `--add-dir "$RUN"` | Lets Read/Bash see the brief/screenshots and write `report.md` outside the project tree. |
 | `--append-system-prompt …` | Spawn script requires writing `report.md` before cleanup (final `-p` text is **last turn only**). |
+
+**Optional Fable:** utterance `Fable` (or config / `--model`) pins `--model fable`. On Claude Code **≥2.1.255** that alias is Fable 5.1; below it still resolves to Fable 5 with no error. Version pin: `claude-fable-5-1` (fails loud on older CLIs). `claude-fable-5` is the **older** Fable 5, not 5.1. Do not pass `best` (silent Fable upgrade). Headless `-p` never shows Fable’s usage-credit consent prompt — it bills if the account would. Classifier fallback can move a Fable child onto Opus mid-run; that is vendor routing, not a sticky-route failure. Bracketed context aliases (`fable[1m]`) fail `spawn.sh` charset. Official: [Model configuration](https://code.claude.com/docs/en/model-config), [Fable 5.1](https://platform.claude.com/docs/en/models/fable-5-1/overview) (accessed 2026-09-05).
 
 `scripts/spawn.sh` exports `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH=1` so the child cannot nest Claude Agent spawns ([official](https://code.claude.com/docs/en/sub-agents): `"1"` disables nesting). Do not raise it for an L2 worker.
 

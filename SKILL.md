@@ -4,7 +4,7 @@ description: >
   Use when the user asks to orchestrate, outsource, delegate, or hand off a
   slice to another coding-agent CLI as a one-shot subagent — Claude Code,
   Codex, Grok Build, Cursor Agent, Antigravity CLI, Gemini CLI, OpenCode, or Droid — or to ask
-  Claude, ask GPT, ask Codex, ask Grok, ask Gemini, get a second opinion, or pressure-test
+  Claude, ask GPT, ask Codex, ask Grok, ask Gemini, ask Fable, ask Astra, get a second opinion, or pressure-test
   a plan or diff from a different harness. Do not use to install those CLIs or
   to explain their flags. Do not use if this session was launched by this skill
   (prompt starts with YOU ARE THE WORKER, or HARNESS_SUBAGENT_RUN is set) — do
@@ -13,7 +13,7 @@ license: MIT
 compatibility: Requires another coding-agent CLI on PATH (claude, codex, grok, agy, and/or cursor-agent). Windows, WSL, Linux, macOS. Git Bash on native Windows.
 metadata:
   author: ptmrio
-  version: "0.2.3"
+  version: "0.2.4"
 ---
 
 # Harness Subagent
@@ -67,13 +67,15 @@ Never spawn the **parent’s own family** unless the user named it this turn (Gr
 
 Family is the **parent product/CLI**, not the model id. Cursor Agent, `cursor-agent`, and Grok Bot are `cursor` (even when the model is Grok). Grok **Build** CLI is `grok`. Claude Code is `claude`. Codex CLI is `codex`. Antigravity CLI is `agy`. Legacy Gemini CLI is `gemini` (a different family; do not treat it as `agy`). A Cursor parent with `defaults.implement = "cursor"` skips and asks once — that token is a backend, not `self`. Pin `self` when this session should do the job.
 
-| User says | Binary (PATH) | Default model (latest series) | Default thinking | Flags |
+| User says | Binary (PATH) | Skill policy default | Default thinking | Flags |
 |---|---|---|---|---|
-| Claude, Opus, Fable, ask-claude | `claude` | `opus` (also `fable`, `sonnet`, `haiku`) | `xhigh` | [references/backend-claude.md](references/backend-claude.md) |
-| GPT, Codex, Sol, Terra, Luna, ask-gpt | `codex` | `gpt-5.6-sol` | `xhigh` | [references/backend-codex.md](references/backend-codex.md) |
+| Claude, Opus, Fable, ask-claude | `claude` | `opus` | `xhigh` | [references/backend-claude.md](references/backend-claude.md) |
+| GPT, Codex, Sol, Terra, Luna, Astra, ask-gpt | `codex` | `gpt-5.6-sol` | `xhigh` | [references/backend-codex.md](references/backend-codex.md) |
 | Grok, ask-grok | `grok` | `grok-4.6` | `xhigh` | [references/backend-grok.md](references/backend-grok.md) |
 | Gemini, Antigravity, agy, ask-gemini | `agy` | vendor default (omit `--model`; list: `agy models`) | `high` | [references/backend-agy.md](references/backend-agy.md) |
 | Unspecified | Matching `defaults.*` key in user config (`spec`, `spec-ui`, `plan`, `plan-ui`, `implement`, `implement-ui`, `writer`, `research`, `code-review`, `code-review-visual`, …) if set **and** (backend not the parent family, or value is self-class); else ask once. Review aliases: `code-review-task` / `code-review-adversarial` / `code-review-adverserial` / `review` → `code-review` (see resolution order in user-config). | Config `[models]` / `[effort]`, else table defaults | — | [references/user-config.md](references/user-config.md) |
+
+**Series pin:** A named series is a **model pin**, not only a backend pick. Tokens: `Opus`→`opus`, `Fable`→`fable` (Fable 5.1 on Claude Code ≥2.1.255; older CLIs still resolve `fable` to Fable 5 — pin `claude-fable-5-1` to fail loud), `Sonnet`→`sonnet`, `Haiku`→`haiku`, `Sol`→`gpt-5.6-sol`, `Terra`→`gpt-5.6-terra`, `Luna`→`gpt-5.6-luna`, `Astra`→`gpt-6-astra`. Generic `Claude` / `ask-claude` / `GPT` / `Codex` / `ask-gpt` use config `[models]` else the policy default. Do not use Claude’s `best` alias (silent Fable upgrade). Do not swap the policy default to a vendor’s newest bundled model unless this utterance (or the user config) pins it.
 
 If the user pins a model id, use it. Cursor Agent / OpenCode / Droid / legacy Gemini CLI: [references/more-clis.md](references/more-clis.md) (not in `scripts/spawn.sh`). Config token `gemini` is that legacy CLI, not an alias for `agy`.
 
@@ -210,6 +212,7 @@ Cheap-check claims (`file:line` exists; tests actually fail). For Implement: fil
 | "I'll paste the diff to save it a step" | Named paths + bounded range. |
 | "Harness must be read-only" | Review must not edit application files; temp/report writes are allowed. Implement may edit when the brief says so. |
 | "This task wants Codex / Opus / Grok" | Utterance, then config, then ask. No task map. |
+| "Astra/Fable is now latest — change the skill default" | Policy default stays until the user pins it. Series name this turn is a model pin only. |
 | "Child hit a usage limit — switch models" | Sticky route. Do not retarget. Report and ask once. Stop later orchestrate stages. |
 | "Orchestrate this — second opinion" means full loop | Single-job narrowing → one-shot review. |
 | "Full loop using Codex" is one-shot because Codex is named | Explicit full-loop language wins; harness only pins backends. |
