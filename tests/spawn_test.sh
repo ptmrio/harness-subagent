@@ -905,6 +905,18 @@ event_case agy $'{"type":"text_delta","text":"VERDICT: "}\n{"type":"text_delta",
 [[ "$ec" == 0 && "$(cat "$EVENTRUN/last.md")" == 'VERDICT: done' ]] && ok 'agy concatenates human deltas' || fail_msg 'agy delta extraction'
 event_case agy $'{"type":"text_delta","text":"draft"}\n{"type":"result","result":{"response":"VERDICT: final"}}\n' 0
 [[ "$ec" == 0 && "$(cat "$EVENTRUN/last.md")" == 'VERDICT: final' ]] && ok 'agy final response outranks deltas' || fail_msg 'agy result extraction'
+# Current agy stream-json uses "event" not "type" (live 2026-09-07).
+agy_event_jsonl="$(printf '%s\n' \
+  "{\"event\":\"init\",\"conversation_id\":\"$SID_A\",\"init\":{}}" \
+  '{"event":"step_update","step_update":{"text_delta":"ignore"}}' \
+  '{"event":"result","result":{"response":"VERDICT — HELLO_WORLD\nHELLO_WORLD\n","num_turns":1}}')"
+event_case agy "$agy_event_jsonl" 0
+if [[ "$ec" == 0 && "$(cat "$EVENTRUN/last.md")" == $'VERDICT — HELLO_WORLD\nHELLO_WORLD' ]] \
+  && identity_ok "$EVENTRUN" agy false && [[ "$(cat "$EVENTRUN/session-id")" == "$SID_A" ]]; then
+  ok 'agy event-key stream captures HELLO_WORLD and identity'
+else
+  fail_msg "agy event-key stream (exit=$ec last=$(cat "$EVENTRUN/last.md" 2>/dev/null || true))"
+fi
 event_case agy '{"type":"init","conversation_id":""}' 0
 [[ "$ec" == 0 && ! -e "$EVENTRUN/session-id" ]] && ok 'empty agy ID unavailable' || fail_msg 'empty agy ID published'
 for backend in codex agy; do

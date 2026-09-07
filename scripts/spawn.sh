@@ -278,7 +278,7 @@ try:
                             parse_error = exc
                         continue
                     try:
-                        kind = event.get('type')
+                        kind = event.get('type') or event.get('event')
                         # A later identity must not prove resume after a parse/identity failure.
                         if parse_error is None:
                             if (backend == 'codex' and kind == 'thread.started') or (backend == 'agy' and kind == 'init'):
