@@ -16,6 +16,7 @@ implement = "claude"
 implement-ui = "claude"
 writer = "grok"            # sustained prose; suggestion only — not claude
 research = "codex"         # lookup / competitive / current docs
+improve = "codex"          # harden a named spec/plan before implement
 code-review = "codex"      # adversarial cleanliness + correctness
 code-review-visual = "codex"   # Playwright / live UI + shots; holistic user-walk
 
@@ -30,3 +31,13 @@ grok = "grok-4.6"
 claude = "xhigh"
 codex = "xhigh"
 grok = "xhigh"
+
+# Optional overlays: only for roles that must differ from [models]/[effort] above.
+# [roles.research]
+# backend = "grok"
+# model   = "grok-4.6"
+# effort  = "high"
+# [roles.improve]
+# backend = "codex"
+# model   = "gpt-6-astra"
+# effort  = "medium"

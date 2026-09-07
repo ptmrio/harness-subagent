@@ -13,7 +13,7 @@ license: MIT
 compatibility: Requires another coding-agent CLI on PATH (claude, codex, grok, agy, and/or cursor-agent). Windows, WSL, Linux, macOS. Git Bash on native Windows.
 metadata:
   author: ptmrio
-  version: "0.2.5"
+  version: "0.3.0"
 ---
 
 # Harness Subagent
@@ -49,15 +49,31 @@ L1 invokes `scripts/spawn.sh --mode …`. That argv is **not** a child instructi
 **Precedence (evaluate in order):**
 
 1. **Single-job narrowing wins one-shot** — utterance names one job (second opinion, review this diff, implement only …, rewrite the README, research X) → one brief, one spawn. A leading “Orchestrate this —” does **not** force the full loop.
-2. **Explicit full-loop wins** — user says “run the full loop” / names practices+implement+review together / open-ended “orchestrate this feature end-to-end” with **no** single-job noun → full checklist below. A named harness here only **pins the backend for each stage** (or per-stage config); it does **not** collapse the loop into one shot.
+2. **Explicit full-loop wins** — user says “run the full loop” / names research+spec+plan+improve+implement+review together / open-ended “orchestrate this feature end-to-end” with **no** single-job noun → path table below. A named harness here only **pins the backend for each stage** (or per-stage config); it does **not** collapse the loop into one shot.
 3. Otherwise ask once what they want (full loop vs one job).
 
-**Full-loop checklist** (skip steps already done or user-waived; **one job per spawn**):
+**Full-loop path** — announce it so the human can override. Ratchet is one-way: hidden complexity upgrades the path; nothing downgrades. Full loop is **not** seven CLI launches. Skip stages already done, waived, or default-skip below. **One job per spawn.**
 
-1. **Practices** — Research (or parent `self` if pinned): exactly **two** anchors — one Anthropic + one OpenAI official guidance. Optionally supplement (not replace) with Cursor/xAI when the stack/harness makes them relevant. Cite + date-stamp.
-2. **Implement** — bounded slice against those practices. Paste the full TDD table from [roles.md](references/roles.md).
-3. **Validate** — `code-review` (adversarial). Add `code-review-visual` when UI is in play.
-4. **Final coherence** — parent default `self` (or one short Review spawn): logic, redundancy, overall sanity vs the two anchors and the original ask.
+| Path | When | Stages |
+|---|---|---|
+| **S Spike** | Feasibility / unknown fact. No build. | research (or unstuck). Stop. |
+| **B Bounded** | Change to code that already exists; you could describe the diff in a sentence or a few files. | implement → `code-review` [→ `code-review-visual` if a UI surface changed] → parent coherence (`self`) |
+| **A Architectural** | New subsystem, new project, or an interface others depend on. | research → spec → plan → improve → implement → `code-review` [→ visual] → parent coherence (`self`) |
+
+Default skips (un-skip only when the trigger holds):
+
+| Stage | Default | Un-skip |
+|---|---|---|
+| Research | skip | Unknown stack/API/version, or Path A. Relevant primary sources — not a mandatory Anthropic+OpenAI pair on every app change. |
+| Spec | skip | Path A |
+| Plan | skip | Multi-file **and** multi-task |
+| Improve | skip | A plan exists **and** (Path A **or** the plan author's family equals the implementer's family) |
+| Implement | run | Build request |
+| `code-review` | run | Any loop that produced a diff |
+| `code-review-visual` | skip | A UI surface changed |
+| Parent coherence | run | Always (parent `self`; no spawn) |
+
+“Improve this plan” / “research X” stay **one-shot**. An explicit list of stages authorizes those stages.
 
 If any stage is blocked, **stop** dependent stages and follow the sticky-route evidence and parent wait rules — do not skip ahead.
 
@@ -73,7 +89,7 @@ Family is the **parent product/CLI**, not the model id. Cursor Agent, `cursor-ag
 | GPT, Codex, Sol, Terra, Luna, Astra, ask-gpt | `codex` | `gpt-5.6-sol` | `xhigh` | [references/backend-codex.md](references/backend-codex.md) |
 | Grok, ask-grok | `grok` | `grok-4.6` | `xhigh` | [references/backend-grok.md](references/backend-grok.md) |
 | Gemini, Antigravity, agy, ask-gemini | `agy` | vendor default (omit `--model`; list: `agy models`) | `high` | [references/backend-agy.md](references/backend-agy.md) |
-| Unspecified | Matching `defaults.*` key in user config (`spec`, `spec-ui`, `plan`, `plan-ui`, `implement`, `implement-ui`, `writer`, `research`, `code-review`, `code-review-visual`, …) if set **and** (backend not the parent family, or value is self-class); else ask once. Review aliases: `code-review-task` / `code-review-adversarial` / `code-review-adverserial` / `review` → `code-review` (see resolution order in user-config). | Config `[models]` / `[effort]`, else table defaults | — | [references/user-config.md](references/user-config.md) |
+| Unspecified | Matching `defaults.*` key (`spec`, `plan`, `implement`, `writer`, `research`, `improve`, `code-review`, `code-review-visual`, …) if set **and** (backend not the parent family, or value is self-class); else ask once. Review aliases: `code-review-task` / `code-review-adversarial` / `code-review-adverserial` / `review` → `code-review`. Research alias: `researcher` → `research`. Improve aliases: `harden` / `plan-review`. Optional `[roles.<key>]` overlays model/effort per role. | `[roles.<key>]` then `[models]` / `[effort]`, else table defaults | — | [references/user-config.md](references/user-config.md) |
 
 **Series pin:** A named series is a **model pin**, not only a backend pick. Tokens: `Opus`→`opus`, `Fable`→`fable` (Fable 5.1 on Claude Code ≥2.1.255; older CLIs still resolve `fable` to Fable 5 — pin `claude-fable-5-1` to fail loud), `Sonnet`→`sonnet`, `Haiku`→`haiku`, `Sol`→`gpt-5.6-sol`, `Terra`→`gpt-5.6-terra`, `Luna`→`gpt-5.6-luna`, `Astra`→`gpt-6-astra`. Generic `Claude` / `ask-claude` / `GPT` / `Codex` / `ask-gpt` use config `[models]` else the policy default. Do not use Claude’s `best` alias (silent Fable upgrade). Do not swap the policy default to a vendor’s newest bundled model unless this utterance (or the user config) pins it.
 
@@ -100,7 +116,7 @@ Optional. Survives skill updates. **Never** store prefs in the skill clone (`npx
 - If `$HARNESS_SUBAGENT_CONFIG` is set: that file. Missing file → ask once (do not fall through).
 - Else: `${XDG_CONFIG_HOME:-$HOME/.config}/harness-subagent/config.toml`
 
-Schema, search, and “always use X” write path: [references/user-config.md](references/user-config.md). Do not create the file unless the user asked to pin.
+Schema, search, per-role `[roles.<key>]` overlays, and “always use X” write path: [references/user-config.md](references/user-config.md). Do not create the file unless the user asked to pin.
 
 If the matched `defaults.*` value is `self`, `orchestrator`, `parent`, or `you`, do the job in this session. Do not write a brief. Do not call `scripts/spawn.sh`. A parent-family backend (`grok` while you are Grok) is **not** self — skip and ask once unless this utterance names that harness.
 
@@ -188,16 +204,17 @@ Six parts, in order:
 
 Index only — full cards + contracts in [references/roles.md](references/roles.md).
 
-| Posture / key | Write? | Card |
-|---|---|---|
-| **code-review** (aliases: task, adversarial, adverserial, review) | no | Adversarial cleanliness + correctness |
-| **code-review-visual** | no | Change review + holistic user-walk |
-| **research** | no | Official/modern sources (ANSWER contract) |
-| **implement** / **implement-ui** | **yes** | Ship + pasted TDD table |
-| **spec** / **plan** / **writer** | **yes** | Light cards + own contracts |
-| **Unstuck** | usually no | Independent diagnosis |
+| Posture / key | Write? | Spawn `--mode` | Card |
+|---|---|---|---|
+| **code-review** (aliases: task, adversarial, adverserial, review) | no | `review` | Adversarial cleanliness + correctness |
+| **code-review-visual** | no | `visual` | Change review + holistic user-walk |
+| **research** (alias: researcher) | no | `review` | Official/modern sources (ANSWER contract) |
+| **improve** (aliases: harden, plan-review) | no | `review` | Constructive hardener of a named spec/plan |
+| **implement** / **implement-ui** | **yes** | `implement` | Ship + pasted TDD table |
+| **spec** / **plan** / **writer** | **yes** | `implement` | Light cards + own contracts |
+| **Unstuck** | usually no | `review` | Independent diagnosis |
 
-Config keys and spawn `--mode`: [references/user-config.md](references/user-config.md). Extra `[defaults]` keys are labels, not inferred. The skill has no author job→harness map.
+`spawn.sh` still has three permission buckets (`review` \| `implement` \| `visual`). Role names are **aliases** of those buckets (research/improve → review). Session identity stores the collapsed bucket. Config keys and overlays: [references/user-config.md](references/user-config.md). Extra `[defaults]` keys are labels, not inferred. The skill has no author job→harness map.
 
 ### Report back — synthesis, never a paste
 
@@ -234,6 +251,8 @@ Cheap-check claims (`file:line` exists; tests actually fail). For Implement: fil
 | "Astra/Fable is now latest — change the skill default" | Policy default stays until the user pins it. Series name this turn is a model pin only. |
 | "Child hit a usage limit — switch models" | Sticky route. Read labeled limit evidence; parent waits for reset/backoff or asks about spend/ambiguous quota. Stop dependent stages. |
 | "Orchestrate this — second opinion" means full loop | Single-job narrowing → one-shot review. |
+| "Full loop means all seven stages" | Announce Path S/B/A. Improve and Research are off by default. |
+| "Improve should edit the plan" | Report-only. Parent applies KEEP/CUT/ADD/SPLIT. |
 | "Full loop using Codex" is one-shot because Codex is named | Explicit full-loop language wins; harness only pins backends. |
 | "Practices failed limits — continue to Implement" | Stop dependent stages. Apply the parent wait rules to the preserved evidence. |
 | "last.md is cleanup chatter but exit 0 — treat as success" | Check capture-status / VERDICT. no-verdict = UNVERIFIED. |

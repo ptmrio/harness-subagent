@@ -10,6 +10,7 @@ Usage: spawn.sh --backend claude|codex|grok|agy [--mode review|implement|visual]
                 --project DIR --run DIR [--model TOKEN] [--effort TOKEN] [--image PATH]...
                 [--resume-id UUID] [--dry-run] [--help]
 
+Role names (research, improve, spec, …) alias those three permission buckets.
 Requires a non-empty $RUN/brief.md written by the parent.
 Writes $RUN/stdout.md (human child text), prefers $RUN/report.md when it contains VERDICT,
 normalizes into $RUN/last.md, and records $RUN/capture-status.txt (ok|ok-report|usage-limit|no-verdict).
@@ -68,6 +69,9 @@ case "$BACKEND" in
 esac
 case "$MODE" in
   review|implement|visual) ;;
+  research|researcher|improve|harden|plan-review|code-review|code-review-task|code-review-adversarial|code-review-adverserial|unstuck) MODE=review ;;
+  spec|spec-ui|plan|plan-ui|writer|docs|implement-ui|ui|ux|ui-ux) MODE=implement ;;
+  code-review-visual) MODE=visual ;;
   *) die "mode must be review|implement|visual" ;;
 esac
 [[ "$MODE" == "visual" ]] && MODE="review"

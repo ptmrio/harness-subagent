@@ -194,10 +194,10 @@
     {
       "id": 20,
       "prompt": "Orchestrate this feature end-to-end. I did not name a harness. (Test setup: research=codex, implement=claude, code-review=codex. Parent is Grok.)",
-      "expected_output": "Full loop: Practices (exactly two Anthropic+OpenAI anchors, cited/dated) then Implement (brief pastes full TDD table) then adversarial code-review then parent coherence. One job per spawn. Stop if a stage hits limits.",
+      "expected_output": "Classifies a path and announces it. Bounded default: implement then adversarial review then parent coherence. Not seven always-on stages. Not a mandatory two-vendor practices spawn. One job per spawn. Stop if a stage hits limits.",
       "expectations": [
-        "Treats open-ended orchestrate as the full practices→implement→validate→coherence loop",
-        "Practices stage requires exactly two official anchors (Anthropic + OpenAI) with citations/dates",
+        "Treats open-ended orchestrate as a path (Spike / Bounded / Architectural), not seven always-on stages",
+        "Does not spawn a mandatory Anthropic+OpenAI practices pair on a bounded feature",
         "Implement brief pastes the full TDD policy table from roles.md",
         "Spawns at most one harness at a time",
         "Does not spawn grok (parent family)"
@@ -321,6 +321,50 @@
         "Passes --model gpt-5.6-sol into spawn.sh",
         "Does not pass --model gpt-6-astra",
         "Does not spawn cursor (parent family)"
+      ]
+    },
+    {
+      "id": 33,
+      "prompt": "Ask Astra to research current Electron custom titlebar practice. Parent is Cursor.",
+      "expected_output": "One-shot research. May pass --mode research or --mode review (aliases). Pins gpt-6-astra. Brief uses the research ANSWER contract, not code-review FINDINGS. Does not spawn cursor.",
+      "expectations": [
+        "Invokes scripts/spawn.sh --backend codex",
+        "Passes --model gpt-6-astra",
+        "Uses research role card (ANSWER contract), not code-review FINDINGS",
+        "Does not spawn cursor (parent family)"
+      ]
+    },
+    {
+      "id": 34,
+      "prompt": "Harden this plan before implement. I did not name a harness. (Test setup: improve=codex, roles.improve.model=gpt-6-astra, roles.improve.effort=medium, code-review=codex, models.codex=gpt-5.6-sol. Parent is Grok.)",
+      "expected_output": "One-shot improve. Spawns Codex with Astra medium, not Sol. Brief pastes improve KEEP/CUT/ADD/SPLIT contract. Does not edit the plan file. Does not run implement or code-review.",
+      "expectations": [
+        "Uses defaults.improve / roles.improve, not code-review",
+        "Passes --model gpt-6-astra and --effort medium",
+        "Does not pass --model gpt-5.6-sol",
+        "Brief forbids editing the plan file",
+        "Does not spawn grok (parent family)"
+      ]
+    },
+    {
+      "id": 35,
+      "prompt": "Ask for research. (Test setup: research=codex and researcher=claude set to different backends. Parent is Grok.)",
+      "expected_output": "Ask once which research backend. Does not silently pick.",
+      "expectations": [
+        "Detects conflicting research alias backends",
+        "Asks once",
+        "Does not spawn both"
+      ]
+    },
+    {
+      "id": 36,
+      "prompt": "Orchestrate this feature end-to-end — it creates a new payments subsystem. Parent is Grok. Config research=codex spec=self plan=self improve=codex implement=claude code-review=codex.",
+      "expected_output": "Announces Path A. Runs research, then parent spec/plan (self), then improve, implement, code-review, parent coherence. Improve is report-only. One job per spawn.",
+      "expectations": [
+        "Announces Architectural / Path A",
+        "Runs an improve stage before implement",
+        "Does not treat Improve as license to edit the plan file",
+        "Does not spawn grok (parent family)"
       ]
     }
   ]

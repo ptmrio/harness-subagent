@@ -28,7 +28,8 @@ Prefer the more specific key when the job matches, in this order:
 1. `*-ui` / `code-review-visual` over their non-ui / non-visual twins (if `*-ui` is unset, fall back to the twin, then continue).
 2. `writer` over `implement` when the deliverable is **sustained text** (README, SKILL.md copy, GitHub About, article) — not a code slice that happens to include comments.
 3. `research` over `code-review*` when there is **no diff / code-change under review** (external lookup, competitive landscape, current vendor docs, GitHub inventory). “Is this diff correct?” is `code-review`, not `research`.
-4. `implement-ui` still beats `writer` for UI screens.
+4. `improve` over `code-review*` when the artifact is a **spec or plan to harden** (no implementation diff yet) and the ask is constructive revisions, not a reject-only review.
+5. `implement-ui` still beats `writer` for UI screens.
 
 | Key | When | `spawn.sh --mode` | Role card |
 |---|---|---|---|
@@ -40,12 +41,19 @@ Prefer the more specific key when the job matches, in this order:
 | `implement-ui` | Ship UI/UX: layout, interaction, CSS, screens. | `implement` | implement |
 | `writer` | Sustained prose: README, SKILL.md copy, GitHub About/topics, articles. Alias: `docs`. | `implement` | writer |
 | `research` | External lookup, competitive landscape, current vendor docs, GitHub inventory. Alias: `researcher`. | `review` | research |
+| `improve` | Harden a named spec/plan before implement. Slightly adversarial and constructive. Aliases: `harden`, `plan-review`. | `review` | improve |
 | `code-review` | Adversarial diff/plan review (correctness + cleanliness). | `review` | code-review |
 | `code-review-visual` | Live UI or screenshots (Playwright / browser MCP allowed); holistic user-walk. | `visual` | code-review-visual |
 
 **Review key resolution:** check in order: `code-review` → `code-review-adversarial` → `code-review-adverserial` → `code-review-task` → alias `review`. If more than one of these is set to **different** backends, **ask once**.
 
-Aliases (same card / lookup): `code-review-task` → `code-review`; `code-review-adversarial` → `code-review`; `code-review-adverserial` → `code-review`; `review` → `code-review`; `ui` → `implement-ui`; `ux` / `ui-ux` → `implement-ui`; `docs` → `writer`; `researcher` → `research`.
+**Research key resolution:** check `research`, then alias `researcher`. If both are set to different backends (or different `[roles.*]` pins), **ask once**.
+
+**Improve key resolution:** check `improve`, then `harden`, then `plan-review`. If more than one is set to different backends, **ask once**.
+
+Aliases (same card / lookup): `code-review-task` → `code-review`; `code-review-adversarial` → `code-review`; `code-review-adverserial` → `code-review`; `review` → `code-review`; `ui` → `implement-ui`; `ux` / `ui-ux` → `implement-ui`; `docs` → `writer`; `researcher` → `research`; `harden` → `improve`; `plan-review` → `improve`.
+
+Role names are **not** extra permission buckets. `spawn.sh --mode` accepts `review | implement | visual` plus role-name **aliases** (`research`, `improve`, `spec`, …) that collapse to those three. `visual` itself collapses to `review` for CLI flags. Session identity stores the collapsed bucket. Do not put `--mode` in the child brief.
 
 The **skill** still has no author job→harness map. These keys are the **user** speaking in advance. `assets/config.example.toml` is a suggestion; copy and change it. Personality for each key: [roles.md](roles.md).
 
@@ -63,7 +71,7 @@ Pass self-class only in the TOML (or when this utterance says the parent should 
 
 ### Extra `defaults` keys (not inferred)
 
-Any other matching key is a **named label**. The parent uses it only when this utterance contains that label. It must **not** invent keys. `writer` / `research` / `code-review` are known keys above, not extra labels. Config fixtures in evals are test setup, not labels the user spoke.
+Any other matching key is a **named label**. The parent uses it only when this utterance contains that label. It must **not** invent keys. `writer` / `research` / `improve` / `code-review` are known keys above, not extra labels. Config fixtures in evals are test setup, not labels the user spoke.
 
 Unknown `[models]` / `[effort]` keys for extra CLIs are optional; those backends still need [more-clis.md](more-clis.md).
 
@@ -75,4 +83,36 @@ Unknown `[models]` / `[effort]` keys for extra CLIs are optional; those backends
 
 The README author table is not this file. Do not copy it in unless the user asked to pin those as *their* defaults.
 
-Pass pinned `[models]` / `[effort]` into `scripts/spawn.sh` as `--model` / `--effort` (the script allowlists the charset). Never interpolate TOML into a shell string with `eval` or unquoted expansion.
+Pass pinned `[models]` / `[effort]` / `[roles.<key>]` into `scripts/spawn.sh` as `--model` / `--effort` (the script allowlists the charset). Never interpolate TOML into a shell string with `eval` or unquoted expansion.
+
+### Per-role `[roles.<key>]` overlays
+
+Optional. Additive: a role with no table costs zero lines. Today’s `[defaults]` + `[models]` + `[effort]` files stay valid.
+
+Exactly three permitted fields, each independently optional: `backend`, `model`, `effort`. Same allowlisted-token charset as scalar values. `<key>` must be a known role key or alias.
+
+```toml
+[roles.research]
+backend = "grok"
+model   = "grok-4.6"
+effort  = "high"
+
+[roles.improve]
+backend = "codex"
+model   = "gpt-6-astra"
+effort  = "medium"
+```
+
+**Resolution, once, pre-launch** (per field):
+
+1. This utterance — named harness, series pin, `self`.
+2. `[roles.<key>].{backend|model|effort}`
+3. `[defaults].<key>` for backend; `[models].<backend>` / `[effort].<backend>` for model and effort
+4. Skill policy default table
+5. Ask once
+
+Utterance beats stored config (a spoken “ask Astra” must not be silently overridden by `[roles.improve].model`). If the utterance changes backend, discard model/effort that belonged to the old backend before applying the new backend’s fallbacks. Never pass a Grok model into Codex through inheritance. `self` rejects `model`/`effort` fields — they do not retarget this session.
+
+Freeze canonical role, permission bucket, backend, model, effort at launch into `session.json`. Sticky-route forbids swapping **after** a soft failure; per-role config is a pre-launch decision. Resume re-passes the same triple (role-name `--mode` aliases collapse to the stored bucket).
+
+Do not add a redundant `vendor` field. Do not put per-role `tools` / sandbox in this file.

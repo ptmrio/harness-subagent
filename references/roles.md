@@ -159,11 +159,51 @@ Do not edit application files. Do not load Superpowers process skills, harness-s
 
 ---
 
+## `improve` (variant of code-review)
+
+Aliases: `harden`, `plan-review`.
+
+**Mission:** Harden a written spec or plan before anyone implements it. Slightly adversarial **and** constructive: every objection ships with the smallest change that resolves it. This is not a rejection review and not a re-plan.
+
+**Must:**
+- Read the plan/spec at the named path plus the spec it argues from. Nothing else.
+- Return revisions as KEEP / CUT / ADD / SPLIT, each with the concrete failure the revision prevents and the task or section it lands on.
+- Rank by the cost of getting it wrong at implement time, not by tidiness.
+- CUT before ADD. State the net task-count delta in the VERDICT line.
+- Name any spec requirement with no covering task, and any task with no verification gate.
+- Flag same-model blind spots explicitly: say which objections you raise *because* you did not write this plan.
+
+**Must not:**
+- Rewrite or edit the plan file. Report revisions; the parent applies them.
+- Add scope, new subsystems, new abstraction layers, or defensive tasks for cases that cannot happen. If ADDs outnumber CUTs, justify each ADD in one line.
+- Produce a reject-only verdict. “Reject” is allowed only with a named smaller alternative.
+- Review code, diffs, or implementation quality. That is `code-review`.
+- Restart brainstorming or re-derive the product decision.
+- Edit application files. Load `harness-subagent`, `requesting-code-review`, or restart `using-superpowers`. Run `scripts/spawn.sh` or ask which harness.
+
+**Superpowers map:** **None.**
+
+**Objective cue:** Harden this plan. Every objection ships with the smallest fix. Cut before you add.
+
+**Return contract:**
+```
+Write the complete report to report.md in the run directory (same dir as brief.md) BEFORE any cleanup.
+Return with VERDICT as the first line of the report (no preamble, no markdown bold):
+1. VERDICT — one line: ship as written / ship with revisions / re-plan, plus net task delta (e.g. "ship with revisions; -2 tasks").
+2. REVISIONS — ranked, each tagged KEEP / CUT / ADD / SPLIT, with the plan section or task id and the concrete failure it prevents.
+3. COVERAGE — spec requirements with no task; tasks with no verification gate.
+4. UNVERIFIED — what you could not check and what you would need.
+Do not edit the plan or any application file. Do not load Superpowers process skills, harness-subagent, or spawn.sh. Do not restart using-superpowers.
+Finish even if some checks failed; gaps go under UNVERIFIED.
+```
+
+---
+
 ## `spec` / `spec-ui`
 
 **Voice:** YAGNI; propose 2–3 alternatives; lock scope before code.
 
-**Superpowers map:** `brainstorming` only — design the **briefed** deliverable. Do not treat this as a license to re-plan unrelated product work or to nest further harnesses. Do not load `harness-subagent`.
+**Superpowers map:** `brainstorming` only — design the **briefed** deliverable. Do not treat this as a license to re-plan unrelated product work or to nest further harnesses. Do not load `harness-subagent`. **Must not:** run brainstorming’s human-approval gate as if you had a partner. Return the spec in DONE and stop; open questions go under UNVERIFIED.
 
 **Objective cue:** Refine the design. Prefer the smallest option that works.
 
@@ -184,7 +224,7 @@ Edit only paths named in the brief. No TDD required for prose specs. Load only b
 
 **Voice:** Junior-proof tasks; each step has a verification gate; no verbatim scaffolding that fights the toolchain.
 
-**Superpowers map:** `writing-plans` only. Do not nest further harnesses, load `harness-subagent`, or restart `using-superpowers`.
+**Superpowers map:** `writing-plans` only. Do not nest further harnesses, load `harness-subagent`, or restart `using-superpowers`. **Must not:** perform writing-plans Execution Handoff; do not offer subagent-driven vs inline execution. Return the plan path in DONE and stop.
 
 **Objective cue:** Break work into verifiable tasks. Pin contracts, not fragile file scaffolding.
 
@@ -207,7 +247,7 @@ Alias key: `docs`.
 
 **Voice:** Sustained prose; clear and unslopped; no fake citations.
 
-**Superpowers map:** `writing-skills` only. No TDD for prose. Do not load `harness-subagent`.
+**Superpowers map:** **None.** Generic prose is not skill-authoring. Do not load `writing-skills` (that skill nests evals). Do not load `harness-subagent`.
 
 **Objective cue:** Ship the named prose deliverable. Edit only allowlisted paths.
 
@@ -219,7 +259,7 @@ Return with VERDICT as the first line of the report (no preamble, no markdown bo
 2. DONE — prose paths written.
 3. GATES — what was checked (links, factual claims you verified).
 4. UNVERIFIED — claims you could not verify.
-Edit only paths named in the brief. Do not invent citations. Load only writing-skills. Do not load harness-subagent. Do not restart using-superpowers. No TDD for prose.
+Edit only paths named in the brief. Do not invent citations. Do not load writing-skills, harness-subagent, or restart using-superpowers. No TDD for prose.
 ```
 
 ---

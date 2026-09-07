@@ -90,6 +90,7 @@ expect_die "invalid backend" "backend must be" --backend cursor --project "$ROOT
 expect_die "self is not a spawn backend" "backend must be" --backend self --project "$ROOT" --run "$ROOT"
 expect_die "orchestrator is not a spawn backend" "backend must be" --backend orchestrator --project "$ROOT" --run "$ROOT"
 expect_die "invalid mode" "mode must be" --backend claude --mode sideways --project "$ROOT" --run "$ROOT"
+# Role names are aliases of the three permission buckets, not extra sandboxes.
 
 make_run
 HARNESS_SUBAGENT_RUN="/tmp/hs-parent-run" run_spawn \
@@ -215,6 +216,27 @@ assert_none "claude implement no plan" "--permission-mode plan" "$out"
 assert_none "claude implement no acceptEdits" "--permission-mode acceptEdits" "$out"
 assert_one "claude implement one permission-mode" "--permission-mode" "$out"
 assert_one "claude implement tools allowlist" "--tools Bash\\,Read\\,Edit\\,Write\\,Glob\\,Grep" "$out"
+
+expect_ok "dry-run claude research aliases review" \
+  --backend claude --mode research --project "$ROOT" --run "$RUN" --dry-run
+assert_one "claude research tools allowlist" "--tools Bash\\,Read\\,Glob\\,Grep" "$out"
+assert_none "claude research no Edit" "Edit" "$out"
+assert_none "claude research no Write" "Write" "$out"
+
+expect_ok "dry-run claude researcher aliases review" \
+  --backend claude --mode researcher --project "$ROOT" --run "$RUN" --dry-run
+assert_one "claude researcher tools allowlist" "--tools Bash\\,Read\\,Glob\\,Grep" "$out"
+assert_none "claude researcher no Edit" "Edit" "$out"
+
+expect_ok "dry-run claude improve aliases review" \
+  --backend claude --mode improve --project "$ROOT" --run "$RUN" --dry-run
+assert_one "claude improve tools allowlist" "--tools Bash\\,Read\\,Glob\\,Grep" "$out"
+assert_none "claude improve no Edit" "Edit" "$out"
+assert_none "claude improve no Write" "Write" "$out"
+
+expect_ok "dry-run claude spec aliases implement" \
+  --backend claude --mode spec --project "$ROOT" --run "$RUN" --dry-run
+assert_one "claude spec tools allowlist" "--tools Bash\\,Read\\,Edit\\,Write\\,Glob\\,Grep" "$out"
 
 expect_ok "dry-run claude default mode is review" \
   --backend claude --project "$ROOT" --run "$RUN" --dry-run
@@ -819,6 +841,27 @@ for pair in "claude:$CRUN:true" "grok:$XRUN:true" "codex:$DRUN:false" "agy:$ARUN
   if identity_ok "$identity_run" "$backend" "$assigned"; then ok "$backend identity binding";
   else fail_msg "$backend identity binding"; fi
 done
+
+cat >"$STUBDIR/claude" <<'EOF'
+#!/bin/bash
+set -euo pipefail
+: "${HS_STUB_DIR:?}"
+printf '%s\n' "$@" >"$HS_STUB_DIR/claude.argv"
+cat >/dev/null
+printf '%s\n' 'VERDICT — done.'
+EOF
+chmod +x "$STUBDIR/claude"
+make_run
+RRES="$LAST_TMP"
+run_isolated --backend claude --mode research --project "$ROOT" --run "$RRES"
+if [[ "$ec" -eq 0 ]] && "$PYTHON" - "$RRES" <<'PY'
+import json, pathlib, sys
+d = json.loads((pathlib.Path(sys.argv[1]) / 'session.json').read_text())
+assert d['mode'] == 'review', d.get('mode')
+PY
+then ok "research collapses to review in session.json"
+else fail_msg "research session mode (exit=$ec)"
+fi
 
 # One stub protocol for structured event fixtures; it also records actual argv.
 write_event_stub() {

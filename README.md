@@ -38,8 +38,9 @@ Name the harness when you know it. **One job per spawn.** One `/harness-subagent
 
 - *Orchestrate this feature end-to-end.*
 - *Run the full loop: practices, implement, review, coherence.*
+- *Orchestrate this — Path A / architectural.*
 
-That runs: two vendor practice anchors (Anthropic + OpenAI) → implement → adversarial review (+ visual if UI) → final coherence. Single-job lines after “Orchestrate this — …” stay **one-shot** (e.g. second opinion = review only).
+That classifies a path (Spike / Bounded / Architectural) and announces it. Architectural may run research → spec → plan → improve → implement → review [→ visual] → parent coherence. Bounded is implement → review. Single-job lines after “Orchestrate this — …” stay **one-shot** (e.g. second opinion = review only; “improve this plan” = improve only).
 
 **Good (one-shot)**
 
@@ -47,6 +48,7 @@ That runs: two vendor practice anchors (Anthropic + OpenAI) → implement → ad
 - *Ask Codex to review this diff.*
 - *Have Claude Code implement only the named UI paths.* (Then a **second** spawn for review, or parent reviews.)
 - *You write the spec; ask Codex to pressure-test the plan.* (Two jobs → two spawns or parent+spawn.)
+- *Ask Codex to pressure-test / harden this plan.*
 - *Get a visual review from Codex of the screenshots I just took.*
 - *Ask Grok Build to try to refute this plan.*
 - *Ask Fable to review this diff.* (Claude; pins `--model fable` — Fable 5.1 on Claude Code ≥2.1.255)
@@ -71,6 +73,7 @@ Briefs pull personality from `references/roles.md` (Superpowers by default as **
 | `code-review-visual` | Change review + holistic user-walk (screenshots-only = fallback) |
 | `implement` | TDD for useful contracts; skip ceremony tests with a GATES reason |
 | `research` | Official/modern sources; modern over legacy when they conflict |
+| `improve` | Harden a spec/plan: KEEP/CUT/ADD/SPLIT; report-only; net task delta |
 
 ## Recommended use
 
@@ -82,12 +85,13 @@ Author defaults (not the protocol):
 | UI implementation, layout, interaction | Claude Code (Opus) |
 | Sustained writing (README, skill copy, About) | Grok Build CLI (name it this turn if the parent is already Grok) |
 | Research (docs, competitive, GitHub inventory) | Codex |
+| Harden a plan before implement | a *different* harness than the one that wrote it |
 | Diff / adversarial review | Codex |
 | Visual review (live walk or screenshots + named sources) | Codex |
 | Pressure-test a plan (assume it is flawed) | a *different* harness than the one that wrote it |
 | Stuck bug, two fixes already failed | a *different* harness than the parent |
 
-**Worth a run:** second opinions, adversarial review, visual confirmation, unstuck diagnosis, sustained writing, research lookups, a bounded implement slice assigned to that harness, full orchestrate loops.
+**Worth a run:** second opinions, adversarial review, plan hardening, visual confirmation, unstuck diagnosis, sustained writing, research lookups, a bounded implement slice assigned to that harness, full orchestrate loops.
 
 The **child is a worker**, not a second orchestrator. Briefs start with `YOU ARE THE WORKER. DO NOT SPAWN`. Do not put `scripts/spawn.sh` flags in the brief.
 
@@ -120,7 +124,7 @@ The CLIs do not load this file. The **skill** tells the parent to read it when y
 ~/.config/harness-subagent/config.toml
 ```
 
-Copy `assets/config.example.toml` there (`spec`, `plan`, `implement`, `writer`, `research`, `code-review`, `code-review-visual`, …). Values may be a CLI or `self` (parent does that job). `cursor` from a Cursor parent is skipped (same family), not treated as `self`. Aliases `code-review-task` / `code-review-adversarial` still resolve to `code-review`. Override path: `$HARNESS_SUBAGENT_CONFIG`. Schema: `references/user-config.md`.
+Copy `assets/config.example.toml` there (`spec`, `plan`, `implement`, `writer`, `research`, `improve`, `code-review`, `code-review-visual`, …). Values may be a CLI or `self` (parent does that job). Optional `[roles.<key>]` overlays pin model/effort per role. `cursor` from a Cursor parent is skipped (same family), not treated as `self`. Aliases `researcher` → `research`, `harden` / `plan-review` → `improve`. Override path: `$HARNESS_SUBAGENT_CONFIG`. Schema: `references/user-config.md`.
 
 Git clone if you do not want `npx`:
 
