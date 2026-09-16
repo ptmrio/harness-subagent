@@ -13,7 +13,7 @@ license: MIT
 compatibility: Requires another coding-agent CLI on PATH (claude, codex, grok, agy, and/or cursor-agent). Windows, WSL, Linux, macOS. Git Bash on native Windows.
 metadata:
   author: ptmrio
-  version: "0.3.0"
+  version: "0.3.1"
 ---
 
 # Harness Subagent
@@ -148,7 +148,7 @@ PowerShell expands `$(…)`, `cat`, and `$RUN` **before** bash sees them. A doub
 ```
 
 4. List the run dir with Shell (`Get-ChildItem` / `ls`). Cursor **Glob is workspace-scoped** and will miss `%TEMP%`.
-5. Two failed launches → stop. Answer from parent evidence. Mark the harness UNVERIFIED. Do not invent a third quoting recipe.
+5. Two failed launches → stop. Answer from parent evidence. Mark the harness UNVERIFIED. Do not invent a third quoting recipe. Windows Cursor parent Shell: on hosts reporting unavailable filesystem isolation, request full permissions for the spawn call. A parent Shell refusal before the script starts is not a failed spawn launch.
 
 If this parent auto-allows only some CLIs, the spawn will block on `bash` / `bash.exe`, this script, or the target backend (`codex`, …). Ask the user to allow those, or use an approval mode that can allow the one spawn. Do not hardcode a machine allowlist.
 
@@ -195,10 +195,10 @@ Six parts, in order:
 
 1. **Child identity fence** — paste first, verbatim, from [references/roles.md](references/roles.md). Never write `scripts/spawn.sh` or `--mode visual` in the brief (L2 treats that as an order to re-orchestrate).
 2. **Objective** — one sentence naming the verdict / deliverable (role card objective cue).
-3. **Where to look** — paths, bounded commands, symbols; edit allowlist if Implement.
+3. **Where to look** — starting paths, bounded commands, symbols. Name product locks and hard exclusions. For write jobs, name the likely edit set as a start, not a cap.
 4. **What was already tried**
 5. **What would change my mind** — settling evidence (Review) or acceptance gates (Implement).
-6. **Return format** — paste from [references/roles.md](references/roles.md): the role’s **return contract** (includes **write `report.md` before cleanup**), Superpowers map (exact names), must/must-not, and for implement/implement-ui the **full TDD policy table** (never “see roles.md” alone). Role card wins over any older stub wording. Name the run-dir path for `report.md` when the child cannot infer it. Mode mapping lives in [user-config.md](references/user-config.md), not in the brief.
+6. **Return format** — paste from [references/roles.md](references/roles.md): the **shared scope** section once, the role’s **return contract** (includes **write `report.md` before cleanup**), Superpowers map (exact names), must/must-not, and for implement/implement-ui the **full TDD policy table** (never “see roles.md” alone). Role card wins over any older stub wording. Name the run-dir path for `report.md` when the child cannot infer it. Mode mapping lives in [user-config.md](references/user-config.md), not in the brief.
 
 ### Postures → role cards
 

@@ -97,7 +97,7 @@ The **child is a worker**, not a second orchestrator. Briefs start with `YOU ARE
 
 **Not worth a run:** naming, style, formatting, or anything the parent can already answer from context.
 
-The parent writes a **bounded brief** (named paths and a tight investigation — not a pasted dump), runs `scripts/spawn.sh` in the background, then reports in CTO style (bullets, ASCII when useful):
+The parent writes a **job-bounded brief** (named starting paths and a tight investigation — not a pasted dump and not a file jail), runs `scripts/spawn.sh` in the background, then reports in CTO style (bullets, ASCII when useful):
 
 1. What was asked
 2. The harness verdict (quoted)

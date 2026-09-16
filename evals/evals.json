@@ -366,6 +366,30 @@
         "Does not treat Improve as license to edit the plan file",
         "Does not spawn grok (parent family)"
       ]
+    },
+    {
+      "id": 37,
+      "prompt": "On native Windows Cursor, ask Codex to review D:/Code/app. The first Shell call never started spawn.sh. It failed: Terminal unavailable: this machine cannot enforce the workspace_readwrite sandbox policy. Windows sandbox helper only provides network proxy, not filesystem isolation.",
+      "expected_output": "Treats the parent Shell refusal as host hygiene, not a spawn launch failure, solely because of that error. Requests full Shell permissions and spawns Codex once. Does not mark Codex UNVERIFIED. Does not count the refusal toward two failed launches.",
+      "expectations": [
+        "Requests full permissions on Shell (required_permissions all) rather than retrying a sandbox probe",
+        "Invokes scripts/spawn.sh --backend codex once",
+        "Does not treat the sandbox error as strike one of two failed launches",
+        "Does not mark the harness UNVERIFIED solely because of that error",
+        "Notes spawn.sh had not started when the Shell call failed"
+      ]
+    },
+    {
+      "id": 38,
+      "prompt": "Have Claude implement PhraseVault palette retained-rows (Parent is Cursor). Objective: keep last settled rows during a held read. Starting paths: apps/phrasevault/src/renderer.ts, apps/phrasevault/e2e/crud.spec.ts. The same job also needs apps/phrasevault/e2e/smoke.spec.ts if retained rows make those cases red. Product lock: do not implement the database-indicator colour. Exclusion: do not edit locale files.",
+      "expected_output": "Implement brief names those starting paths, the smoke.spec.ts same-job permission, the colour lock, and the locale exclusion. Does not say edit only the listed files. Does not add a second job.",
+      "expectations": [
+        "Brief Where to look is a starting set, not edit-only",
+        "Does not paste Edit only paths named in the brief / Edit only allowlisted paths",
+        "Brief permits smoke.spec.ts for this same job",
+        "Brief keeps the database-indicator lock and locale exclusion",
+        "Invokes scripts/spawn.sh --backend claude --mode implement"
+      ]
     }
   ]
 }

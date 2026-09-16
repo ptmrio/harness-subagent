@@ -4,7 +4,7 @@
 
 **Shared Superpowers rule:** load **only** the exact skill names listed on the card. Do **not** load `using-superpowers` as a controller restart (no re-brainstorm / re-plan of the user’s product work). Do **not** load `requesting-code-review` or `harness-subagent` in a child (those dispatch another agent — nesting failure).
 
-**Parent paste rule:** for every spawn, paste into the brief: **child identity fence** (below), objective cue, must/must-not, Superpowers map (exact names), **and** the role’s return contract. For `implement` / `implement-ui`, also paste the **full TDD policy table** (not a pointer). Do **not** put `scripts/spawn.sh` or `--mode …` in the brief — mode mapping is parent-only ([user-config.md](user-config.md)).
+**Parent paste rule:** for every spawn, paste into the brief: **child identity fence** (below), **shared scope**, objective cue, must/must-not, Superpowers map (exact names), **and** the role’s return contract. For `implement` / `implement-ui`, also paste the **full TDD policy table** (not a pointer). Do **not** put `scripts/spawn.sh` or `--mode …` in the brief — mode mapping is parent-only ([user-config.md](user-config.md)).
 
 **Child identity fence (paste first, verbatim):**
 ```
@@ -18,6 +18,15 @@ You are executing a one-shot job. You are not the orchestrator.
 ```
 
 **Report file (all roles):** Write the complete return-contract report to `report.md` in the run directory (same folder as `brief.md`; Claude/agy get this via `--add-dir`) **before any cleanup**. First line must be `VERDICT` (no markdown bold, no leading `**`). `spawn.sh` prefers `report.md` over final stdout so a later cleanup turn cannot wipe the verdict. Shell redirect is fine for Review (Bash allowed; do not edit application files).
+
+## Shared scope (all roles)
+
+The brief names a **job** (objective), starting paths, product locks, and hard exclusions.
+
+- Stay inside that job. Named paths are where to start, not a cap.
+- Read what a claim or gate needs. Write jobs may edit what the job requires; report extra paths edited.
+- Product locks and explicit exclusions bind. Do not add features, drive-by refactors, or a second job.
+- Review / research / improve / visual do not edit application files. Improve does not edit the plan; it reports KEEP / CUT / ADD / SPLIT.
 
 ---
 
@@ -106,13 +115,13 @@ Do not edit application files. Load only verification-before-completion. Do not 
 | **Forbidden** | String-presence / grep-style tests on prose or prompts; tests that cannot name the production change that would fail them; “test everything” scaffolding |
 | **Optional** | Copy/text tweaks, **non-behavioral** config, renames, generated output, throwaway prototypes — skip with a one-line why in GATES |
 
-**Must:** Edit only allowlisted paths; run named gates; prove on the real artifact (`implement-ui`: exercise the UI path when feasible).
+**Must:** Stay inside the briefed job; run named gates; prove on the real artifact (`implement-ui`: exercise the UI path when feasible).
 
 **Must not:** Expand scope; push; write ceremony tests for TDD theater; restart `using-superpowers`; load `harness-subagent` or nest CLIs.
 
 **Superpowers map:** `test-driven-development` + `verification-before-completion` (apply per the pasted table).
 
-**Objective cue:** Ship the briefed deliverable. Edit only the named paths. Apply the TDD policy table.
+**Objective cue:** Ship the briefed deliverable. Stay inside that job. Apply the TDD policy table.
 
 **Return contract:**
 ```
@@ -122,7 +131,7 @@ Return with VERDICT as the first line of the report (no preamble, no markdown bo
 2. DONE — files touched and behaviour shipped.
 3. GATES — exact commands run and pass/fail (include one-line why for any TDD skip).
 4. UNVERIFIED — what you could not prove.
-Edit only paths named in the brief. Commit only if the brief says to. Never push.
+Stay inside the briefed job. Commit only if the brief says to. Never push.
 Load only test-driven-development and verification-before-completion. Do not load harness-subagent. Do not nest CLIs. Do not restart using-superpowers.
 ```
 
@@ -166,7 +175,7 @@ Aliases: `harden`, `plan-review`.
 **Mission:** Harden a written spec or plan before anyone implements it. Slightly adversarial **and** constructive: every objection ships with the smallest change that resolves it. This is not a rejection review and not a re-plan.
 
 **Must:**
-- Read the plan/spec at the named path plus the spec it argues from. Nothing else.
+- Read the named plan/spec and the spec it argues from, then whatever a revision or coverage claim needs (including scripts a named gate invokes). List extra files opened under COVERAGE.
 - Return revisions as KEEP / CUT / ADD / SPLIT, each with the concrete failure the revision prevents and the task or section it lands on.
 - Rank by the cost of getting it wrong at implement time, not by tidiness.
 - CUT before ADD. State the net task-count delta in the VERDICT line.
@@ -215,7 +224,7 @@ Return with VERDICT as the first line of the report (no preamble, no markdown bo
 2. DONE — spec paths written and decisions locked.
 3. GATES — how the human can validate the spec (checklist).
 4. UNVERIFIED — open product questions.
-Edit only paths named in the brief. No TDD required for prose specs. Load only brainstorming. Do not load harness-subagent. Do not restart using-superpowers.
+Stay inside the briefed job. No TDD required for prose specs. Load only brainstorming. Do not load harness-subagent. Do not restart using-superpowers.
 ```
 
 ---
@@ -236,7 +245,7 @@ Return with VERDICT as the first line of the report (no preamble, no markdown bo
 2. DONE — plan paths written.
 3. GATES — plan self-check (every task has a verification step).
 4. UNVERIFIED — unknowns that block planning.
-Edit only paths named in the brief. Load only writing-plans. Do not load harness-subagent. Do not restart using-superpowers.
+Stay inside the briefed job. Load only writing-plans. Do not load harness-subagent. Do not restart using-superpowers.
 ```
 
 ---
@@ -249,7 +258,7 @@ Alias key: `docs`.
 
 **Superpowers map:** **None.** Generic prose is not skill-authoring. Do not load `writing-skills` (that skill nests evals). Do not load `harness-subagent`.
 
-**Objective cue:** Ship the named prose deliverable. Edit only allowlisted paths.
+**Objective cue:** Ship the named prose deliverable. Stay inside that job.
 
 **Return contract:**
 ```
@@ -259,7 +268,7 @@ Return with VERDICT as the first line of the report (no preamble, no markdown bo
 2. DONE — prose paths written.
 3. GATES — what was checked (links, factual claims you verified).
 4. UNVERIFIED — claims you could not verify.
-Edit only paths named in the brief. Do not invent citations. Do not load writing-skills, harness-subagent, or restart using-superpowers. No TDD for prose.
+Stay inside the briefed job. Do not invent citations. Do not load writing-skills, harness-subagent, or restart using-superpowers. No TDD for prose.
 ```
 
 ---
@@ -279,5 +288,5 @@ Return with VERDICT as the first line of the report (no preamble, no markdown bo
 1. VERDICT — one line (root cause / blocked).
 2. FINDINGS — ranked; evidence for the root cause.
 3. UNVERIFIED — what you could not reproduce or would need.
-Do not edit application files unless the brief explicitly allowlists a fix. Load only systematic-debugging. Do not load harness-subagent. Do not restart using-superpowers.
+Do not edit application files unless the brief asks for a fix. Load only systematic-debugging. Do not load harness-subagent. Do not restart using-superpowers.
 ```
