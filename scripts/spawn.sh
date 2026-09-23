@@ -1,23 +1,24 @@
 #!/usr/bin/env bash
-# Spawn a one-shot harness subagent. Parents must invoke this file, not copy it.
-# Usage: spawn.sh --backend claude|codex|grok|agy [--mode review|implement|visual] \
-#                 --project DIR --run DIR [--model TOKEN] [--effort TOKEN] [--image PATH]...
+# Delegate one task to a coding-agent CLI. Parents must invoke this file, not copy it.
+# Usage: spawn.sh [--backend claude|codex|grok|agy|cursor] --model NAME \
+#                 --project DIR --run DIR [--effort TOKEN] [--image PATH]...
 set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: spawn.sh --backend claude|codex|grok|agy [--mode review|implement|visual] \
-                --project DIR --run DIR [--model TOKEN] [--effort TOKEN] [--image PATH]...
-                [--resume-id UUID] [--dry-run] [--help]
+Usage: spawn.sh [--backend claude|codex|grok|agy|cursor] --model NAME \
+                --project DIR --run DIR [--effort TOKEN] [--image PATH]...
+                [--resume-id UUID] [--limit-retry] [--dry-run] [--help]
 
-Role names (research, improve, spec, …) alias those three permission buckets.
+--model accepts a spoken name from references/models.md or a CLI model id.
+--backend is optional when that name belongs to one CLI.
 Requires a non-empty $RUN/brief.md written by the parent.
-Writes $RUN/stdout.md (human child text), prefers $RUN/report.md when it contains VERDICT,
-normalizes into $RUN/last.md, and records $RUN/capture-status.txt (ok|ok-report|usage-limit|no-verdict).
-Python 3 (python or python3) is required for session.json and JSONL event decoding.
-Resume requires matching session-id + session.json copied into a new attempt run;
-its brief.md is the short continuation. No most-recent selection or fresh fallback.
-Do not interpolate untrusted config into a wrapper; pass --model / --effort only.
+Writes $RUN/stdout.md, prefers $RUN/report.md when it contains VERDICT,
+normalizes into $RUN/last.md, and records $RUN/capture-status.txt
+(ok|ok-report|usage-limit|no-verdict).
+Python 3 is required. Resume uses --resume-id and a new run directory.
+A usage limit with a reset within 24 hours waits once, then resumes that session.
+Do not pass --continue or --last.
 EOF
 }
 
@@ -34,54 +35,43 @@ ok_token() {
 }
 
 BACKEND=""
-MODE="review"
+MODE=""
 PROJECT=""
 RUN=""
 MODEL=""
 EFFORT=""
 RESUME_ID=""
 DRY=0
+LIMIT_RETRY=0
 IMAGES=()
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --backend) need_val "$1" "${2-}"; BACKEND="$2"; shift 2 ;;
-    --mode) need_val "$1" "${2-}"; MODE="$2"; shift 2 ;;
+    --mode) die "--mode was removed; the brief says what the child may change" ;;
     --project) need_val "$1" "${2-}"; PROJECT="$2"; shift 2 ;;
     --run) need_val "$1" "${2-}"; RUN="$2"; shift 2 ;;
     --model) need_val "$1" "${2-}"; MODEL="$2"; shift 2 ;;
     --effort) need_val "$1" "${2-}"; EFFORT="$2"; shift 2 ;;
     --resume-id) need_val "$1" "${2-}"; RESUME_ID="$2"; shift 2 ;;
     --image) need_val "$1" "${2-}"; IMAGES+=("$2"); shift 2 ;;
+    --limit-retry) LIMIT_RETRY=1; shift ;;
     --dry-run) DRY=1; shift ;;
     --help|-h) usage; exit 0 ;;
     *) die "unknown argument: $1" ;;
   esac
 done
 
-[[ -n "$BACKEND" ]] || die "missing --backend"
+[[ -n "$MODEL" ]] || die "missing --model"
 [[ -n "$PROJECT" ]] || die "missing --project"
 [[ -n "$RUN" ]] || die "missing --run"
-
-case "$BACKEND" in
-  claude|codex|grok|agy) ;;
-  *) die "backend must be claude|codex|grok|agy (extra CLIs: see references/more-clis.md)" ;;
-esac
-case "$MODE" in
-  review|implement|visual) ;;
-  research|researcher|improve|harden|plan-review|code-review|code-review-task|code-review-adversarial|code-review-adverserial|unstuck) MODE=review ;;
-  spec|spec-ui|plan|plan-ui|writer|docs|implement-ui|ui|ux|ui-ux) MODE=implement ;;
-  code-review-visual) MODE=visual ;;
-  *) die "mode must be review|implement|visual" ;;
-esac
-[[ "$MODE" == "visual" ]] && MODE="review"
 
 [[ -d "$PROJECT" ]] || die "project dir not found: $PROJECT"
 [[ -d "$RUN" ]] || die "run dir not found: $RUN"
 PROJECT="$(cd "$PROJECT" && pwd -P)"
 RUN="$(cd "$RUN" && pwd -P)"
 BRIEF="$RUN/brief.md"
-[[ -s "$BRIEF" ]] || die "brief.md missing or empty — refusing to spawn: $BRIEF"
+[[ -s "$BRIEF" ]] || die "brief.md missing or empty: $BRIEF"
 
 # L2 children must not re-enter this script (parent relaunch arrives with the var unset).
 if [[ -n "${HARNESS_SUBAGENT_RUN-}" ]]; then
@@ -91,9 +81,6 @@ export HARNESS_SUBAGENT_RUN="$RUN"
 # Official Claude knob: "1" disables nested Agent spawns in the child.
 export CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH=1
 
-if [[ -n "$MODEL" ]] && ! ok_token "$MODEL"; then
-  die "invalid --model (allowlisted charset A-Za-z0-9._+-)"
-fi
 if [[ -n "$EFFORT" ]] && ! ok_token "$EFFORT"; then
   die "invalid --effort (allowlisted charset A-Za-z0-9._+-)"
 fi
@@ -102,30 +89,6 @@ if ((${#IMAGES[@]})); then
     [[ -f "$img" ]] || die "image not found: $img"
   done
 fi
-
-# Defaults match SKILL.md table.
-case "$BACKEND" in
-  claude)
-    MODEL="${MODEL:-opus}"
-    EFFORT="${EFFORT:-xhigh}"
-    ;;
-  codex)
-    MODEL="${MODEL:-gpt-5.6-sol}"
-    EFFORT="${EFFORT:-xhigh}"
-    ;;
-  grok)
-    MODEL="${MODEL:-grok-4.6}"
-    EFFORT="${EFFORT:-xhigh}"
-    ;;
-  agy)
-    # Vendor default model unless pinned. Effort is low|medium|high only.
-    MODEL="${MODEL:-}"
-    EFFORT="${EFFORT:-high}"
-    case "$EFFORT" in
-      xhigh|max|ultra) EFFORT="high" ;;
-    esac
-    ;;
-esac
 
 LAST="$RUN/last.md"
 STDOUT="$RUN/stdout.md"
@@ -156,6 +119,28 @@ if [[ -z "$PYTHON" ]]; then
   exit 2
 fi
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REG="$SCRIPT_DIR/harness_registry.py"
+resolve_err="$RUN/resolve.err"
+resolve_args=(resolve --model "$MODEL")
+if [[ -n "$BACKEND" ]]; then
+  resolve_args+=(--backend "$BACKEND")
+fi
+if ! resolved="$("$PYTHON" "$REG" "${resolve_args[@]}" 2>"$resolve_err")"; then
+  die "$(tr -d '\r' < "$resolve_err")"
+fi
+BACKEND="$(printf '%s\n' "$resolved" | head -n 1 | tr -d '\r')"
+MODEL="$(printf '%s\n' "$resolved" | tail -n 1 | tr -d '\r')"
+if [[ -n "$EFFORT" ]]; then
+  if ! "$PYTHON" "$REG" check-effort --backend "$BACKEND" --model "$MODEL" --effort "$EFFORT" 2>"$resolve_err"; then
+    die "$(tr -d '\r' < "$resolve_err")"
+  fi
+fi
+case "$BACKEND" in
+  claude|codex|grok|agy|cursor) ;;
+  *) die "unknown backend: $BACKEND" ;;
+esac
+
 new_uuid() {
   local id
   if command -v uuidgen >/dev/null; then
@@ -179,12 +164,14 @@ new_uuid() {
 }
 
 SESSION_PY="$(mktemp "${TMPDIR:-/tmp}/hs-sess.XXXXXX.py")"
-trap 'rm -f "$SESSION_PY"' EXIT
+GROK_PROMPT_COPY=""
+cleanup() { rm -f "$SESSION_PY" ${GROK_PROMPT_COPY:+"$GROK_PROMPT_COPY"}; }
+trap cleanup EXIT
 cat >"$SESSION_PY" <<'PY'
 import json, pathlib, re, sys
 action, run, project, backend, model, effort, mode, sid, skip, resume = sys.argv[1:]
 run = pathlib.Path(run).resolve()
-key = {'claude': 'session_id', 'grok': 'session_id', 'codex': 'thread_id', 'agy': 'conversation_id'}[backend]
+key = {'claude': 'session_id', 'grok': 'session_id', 'codex': 'thread_id', 'agy': 'conversation_id', 'cursor': 'session_id'}[backend]
 uuid = re.compile(r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
 
 def load_identity():
@@ -349,29 +336,42 @@ elif [[ "$BACKEND" == claude || "$BACKEND" == grok ]]; then
   SID="$(new_uuid)"
 fi
 
-# Claude: final -p text is last turn only; require report.md so cleanup turns cannot wipe the verdict.
-CLAUDE_REPORT_HINT='Deliverable: write the complete VERDICT report to report.md in the --add-dir run directory (same folder as brief.md) via a shell redirect BEFORE any cleanup. First line must be VERDICT (no markdown bold). Do not edit application files.'
+# Claude's final stdout is the last turn only. report.md is the durable result.
+CLAUDE_REPORT_HINT="Write the complete report to report.md in the run directory ${RUN} before any cleanup. The first line states the result in plain text."
+
+PROMPT_FILE="$RUN/prompt.md"
+{
+  cat "$BRIEF"
+  printf '\n\nWrite report.md to %s before you exit. The first line states the result in plain text.\n' "$RUN/report.md"
+} >"$PROMPT_FILE"
+if [[ "$BACKEND" == grok && "$DRY" -eq 0 ]]; then
+  GROK_PROMPT_COPY="$PROJECT/.harness-subagent-brief.md"
+  cp "$PROMPT_FILE" "$GROK_PROMPT_COPY"
+  PROMPT_FILE="$GROK_PROMPT_COPY"
+fi
+
+CURSOR_MODEL="$MODEL"
+if [[ "$BACKEND" == cursor && -n "$EFFORT" && "$CURSOR_MODEL" != *'['* ]]; then
+  CURSOR_MODEL="${MODEL}[effort=${EFFORT}]"
+fi
 
 case "$BACKEND" in
   claude)
-    if [[ "$MODE" == "implement" ]]; then
-      TOOLS="Bash,Read,Edit,Write,Glob,Grep"
-    else
-      TOOLS="Bash,Read,Glob,Grep"
-    fi
-    CMD=(claude -p --permission-mode auto --tools "$TOOLS"
-      --output-format text --model "$MODEL" --effort "$EFFORT"
+    CMD=(claude -p --permission-mode auto --tools "Bash,Read,Edit,Write,Glob,Grep"
+      --output-format text --model "$MODEL"
       --add-dir "$RUN"
       --append-system-prompt "$CLAUDE_REPORT_HINT")
+    if [[ -n "$EFFORT" ]]; then CMD+=(--effort "$EFFORT"); fi
     if [[ -n "$RESUME_ID" ]]; then CMD+=(--resume "$RESUME_ID"); else CMD+=(--session-id "$SID"); fi
     ;;
   codex)
-    # All modes: --approve-for-me (classifier Auto). Do not pass --sandbox
-    # (0.147 mutex with --approve-for-me; read-only also blocks temp/report writes).
-    # Write raw child text to stdout.md; finalize_capture prefers report.md.
+    # --approve-for-me is the unattended path. Do not also pass --sandbox.
+    # This CLI rejects the pair (0.147).
     CMD=(codex exec --approve-for-me -C "$PROJECT")
     if [[ -n "$RESUME_ID" ]]; then CMD+=(resume); fi
-    CMD+=(-m "$MODEL" -c "model_reasoning_effort=$EFFORT" --skip-git-repo-check --json)
+    CMD+=(-m "$MODEL")
+    if [[ -n "$EFFORT" ]]; then CMD+=(-c "model_reasoning_effort=$EFFORT"); fi
+    CMD+=(--skip-git-repo-check --json)
     if ((${#IMAGES[@]})); then
       for img in "${IMAGES[@]}"; do
         CMD+=(-i "$img")
@@ -382,27 +382,24 @@ case "$BACKEND" in
     CMD+=(-)
     ;;
   grok)
-    CMD=(grok --permission-mode auto -m "$MODEL" --effort "$EFFORT"
-      --cwd "$PROJECT" --prompt-file "$BRIEF" --output-format plain)
+    CMD=(grok --permission-mode auto -m "$MODEL"
+      --cwd "$PROJECT" --prompt-file "$PROMPT_FILE" --output-format plain)
+    if [[ -n "$EFFORT" ]]; then CMD+=(--effort "$EFFORT"); fi
     if [[ -n "$RESUME_ID" ]]; then CMD+=(--resume "$RESUME_ID"); else CMD+=(--session-id "$SID"); fi
     ;;
   agy)
-    # Flags before -p. Do not pass --project (that is a Google project id).
-    # --add-dir makes RUN a writable workspace. Implement must not get it
-    # (2026-08-31 weather UI: app landed in $RUN, --project stayed empty).
-    # Review/Visual still add RUN so screenshots are visible. Brief is in -p.
-    CMD=(agy --output-format stream-json --effort "$EFFORT"
-      --print-timeout 15m --disable-slash-commands --mode accept-edits)
-    if [[ "$MODE" != "implement" ]]; then
-      CMD+=(--add-dir "$RUN")
-    fi
-    if [[ -n "$MODEL" ]]; then
-      CMD+=(--model "$MODEL")
-    fi
-    if [[ "$MODE" == "implement" ]]; then
-      CMD+=(--dangerously-skip-permissions)
-    fi
+    # Do not pass --add-dir. On 2026-08-31 that made the run dir the workspace
+    # and the app was written there instead of --project.
+    CMD=(agy --output-format stream-json
+      --print-timeout 15m --disable-slash-commands --mode accept-edits
+      --dangerously-skip-permissions --model "$MODEL")
+    if [[ -n "$EFFORT" ]]; then CMD+=(--effort "$EFFORT"); fi
     if [[ -n "$RESUME_ID" ]]; then CMD+=(--conversation "$RESUME_ID"); fi
+    ;;
+  cursor)
+    CMD=(cursor-agent -p --trust --force --output-format text
+      --workspace "$PROJECT" --add-dir "$RUN" --model "$CURSOR_MODEL")
+    if [[ -n "$RESUME_ID" ]]; then CMD+=(--resume "$RESUME_ID"); fi
     ;;
 esac
 
@@ -459,7 +456,7 @@ detect_usage_limit() {
   printf '%s\n' \
     'VERDICT — BLOCKED: usage/rate limit' \
     '' \
-    'UNVERIFIED — Child returned limit evidence, not a completed report. Keep the selected backend/model and route pins (sticky route). The parent owns waiting and any retry decision. For a subscription/session window, wait for the stated reset and preserve its timezone. For a transient HTTP 429 / Too Many Requests without stronger spend/quota evidence, use a short backoff and honor any retry hint. Explicit insufficient credits, spend cap, or exhausted paid quota takes precedence over generic 429: ask the human; do not enable spend or change billing automatically. For ambiguous quota evidence without a reliable cause/reset, report it and ask once. Do not invent a reset or retry indefinitely. Spawn does not sleep, launch a sleeper, or change routes.' \
+    'UNVERIFIED — Child returned limit evidence, not a completed report. Keep this CLI and model. If a reset time is known and within 24 hours, spawn.sh waits and resumes this session once. Otherwise stop and ask the user. Do not switch CLI or model. Do not invent a reset time.' \
     "$evidence" >"$f"
   printf 'usage-limit\n' >"$STATUS"
 }
@@ -496,10 +493,10 @@ if [[ "$DRY" -eq 1 ]]; then
   printf 'cd %q &&' "$PROJECT"
   printf ' %q' "${CMD[@]}"
   case "$BACKEND" in
-    claude) printf ' < %q > %q 2> %q' "$BRIEF" "$STDOUT" "$ERR" ;;
-    codex) printf ' < %q > %q 2> %q' "$BRIEF" "$EVENTS" "$ERR" ;;
+    claude|cursor) printf ' < %q > %q 2> %q' "$PROMPT_FILE" "$STDOUT" "$ERR" ;;
+    codex) printf ' < %q > %q 2> %q' "$PROMPT_FILE" "$EVENTS" "$ERR" ;;
     grok) printf ' < /dev/null > %q 2> %q' "$STDOUT" "$ERR" ;;
-    agy) printf ' -p "$(cat %q)" < /dev/null > %q 2> %q' "$BRIEF" "$EVENTS" "$ERR" ;;
+    agy) printf ' -p "$(cat %q)" < /dev/null > %q 2> %q' "$PROMPT_FILE" "$EVENTS" "$ERR" ;;
   esac
   printf '\n'
   exit 0
@@ -511,19 +508,19 @@ if [[ -n "$RESUME_ID" ]]; then session_data attempt; fi
 cli_ec=0
 capture_ec=0
 case "$BACKEND" in
-  claude)
-    "${CMD[@]}" < "$BRIEF" > "$STDOUT" 2> "$ERR" || cli_ec=$?
+  claude|cursor)
+    "${CMD[@]}" < "$PROMPT_FILE" > "$STDOUT" 2> "$ERR" || cli_ec=$?
     ;;
   grok)
     "${CMD[@]}" < /dev/null > "$STDOUT" 2> "$ERR" || cli_ec=$?
     ;;
   codex)
-    "${CMD[@]}" < "$BRIEF" 2> "$ERR" | session_data events 2>"$DIAG" && ps=("${PIPESTATUS[@]}") || ps=("${PIPESTATUS[@]}")
+    "${CMD[@]}" < "$PROMPT_FILE" 2> "$ERR" | session_data events 2>"$DIAG" && ps=("${PIPESTATUS[@]}") || ps=("${PIPESTATUS[@]}")
     cli_ec="${ps[0]}"
     capture_ec="${ps[1]}"
     ;;
   agy)
-    "${CMD[@]}" -p "$(cat "$BRIEF")" < /dev/null 2> "$ERR" | session_data events 2>"$DIAG" && ps=("${PIPESTATUS[@]}") || ps=("${PIPESTATUS[@]}")
+    "${CMD[@]}" -p "$(cat "$PROMPT_FILE")" < /dev/null 2> "$ERR" | session_data events 2>"$DIAG" && ps=("${PIPESTATUS[@]}") || ps=("${PIPESTATUS[@]}")
     cli_ec="${ps[0]}"
     capture_ec="${ps[1]}"
     ;;
@@ -536,5 +533,46 @@ if [[ "$capture_ec" -ne 0 ]]; then
   if [[ "$cli_ec" -eq 0 ]]; then cli_ec="$capture_ec"; fi
 elif [[ -n "$RESUME_ID" && "$cli_ec" -ne 0 ]] && ! grep -qx 'usage-limit' "$STATUS"; then
   blocked_capture 'exact resume failed' "CLI exit $cli_ec. $(cat "$ERR") Read preserved stdout.md/events.jsonl and the prior checkpoint; no fresh-thread fallback was launched."
+fi
+if [[ "$LIMIT_RETRY" -eq 0 ]] && grep -qx 'usage-limit' "$STATUS" && [[ -s "$RUN/session-id" && -s "$RUN/session.json" ]]; then
+  decision="$("$PYTHON" "$REG" limit "$LAST" "$STDOUT" "$ERR" "$PROVIDER_ERRORS" 2>/dev/null || true)"
+  case "$decision" in
+    wait\ *)
+      secs="${decision#wait }"
+      sid="$(tr -d '\r\n' < "$RUN/session-id")"
+      attempt="$(mktemp -d "${TMPDIR:-/tmp}/harness-subagent-wait.XXXXXX")"
+      cp "$RUN/session-id" "$RUN/session.json" "$attempt/"
+      cat >"$attempt/brief.md" <<EOF
+# YOU ARE THE WORKER. DO NOT SPAWN.
+Do not load harness-subagent. Do not run scripts/spawn.sh.
+
+## Task
+Continue the same session. A usage limit paused the work and the reset time has passed.
+
+## Where to look
+Prior report, if any: $RUN/report.md
+Original brief: $RUN/brief.md
+
+## Done when
+Finish the original task. Write report.md in this run directory before you exit.
+EOF
+      echo "spawn.sh: usage limit, waiting ${secs}s then resuming ${sid}" >&2
+      sleep "$secs"
+      set +e
+      env -u HARNESS_SUBAGENT_RUN "$0" \
+        --backend "$BACKEND" --model "$MODEL" --project "$PROJECT" --run "$attempt" \
+        --resume-id "$sid" --limit-retry \
+        ${EFFORT:+--effort "$EFFORT"}
+      child_ec=$?
+      set -e
+      cp -f "$attempt/last.md" "$RUN/last.md" 2>/dev/null || true
+      cp -f "$attempt/capture-status.txt" "$RUN/capture-status.txt" 2>/dev/null || true
+      if [[ -s "$attempt/report.md" ]]; then cp -f "$attempt/report.md" "$RUN/report.md"; fi
+      if [[ -s "$attempt/session-id" ]]; then cp -f "$attempt/session-id" "$RUN/session-id"; fi
+      if [[ -s "$attempt/session.json" ]]; then cp -f "$attempt/session.json" "$RUN/session.json"; fi
+      printf '%s\n' "$attempt" >"$RUN/wait-run.txt"
+      exit "$child_ec"
+      ;;
+  esac
 fi
 exit "$cli_ec"

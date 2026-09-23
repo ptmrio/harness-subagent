@@ -103,7 +103,7 @@ fi
 # --- live ---
 
 live_one() {
-  local backend="$1" run
+  local backend="$1" model="$2" run
   if ! has_bin "$backend"; then
     skip "$backend not on PATH (live)"
     return 0
@@ -115,7 +115,7 @@ Reply with exactly these two lines and nothing else. Do not use tools.
 VERDICT — HELLO_WORLD
 HELLO_WORLD
 EOF
-  run_cmd "$BASH_BIN" "$SPAWN" --backend "$backend" --mode review --project "$ROOT" --run "$run" --effort low
+  run_cmd "$BASH_BIN" "$SPAWN" --backend "$backend" --model "$model" --project "$ROOT" --run "$run" --effort low
   if [[ "$ec" -eq 0 && -s "$run/last.md" ]] && grep -q 'HELLO_WORLD' "$run/last.md"; then
     ok "$backend live HELLO_WORLD"
   else
@@ -123,10 +123,10 @@ EOF
   fi
 }
 
-live_one claude
-live_one codex
-live_one grok
-live_one agy
+live_one claude claude-opus-5-5
+live_one codex gpt-6-astra
+live_one grok grok-4.7
+live_one agy agy
 
 echo
 echo "passed=$pass failed=$fail"

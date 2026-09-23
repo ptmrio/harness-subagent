@@ -1,0 +1,145 @@
+{
+  "wait_limit_seconds": 86400,
+  "wait_buffer_seconds": 15,
+  "harnesses": {
+    "claude": {
+      "bin": "claude",
+      "version": ["--version"],
+      "auth": ["auth", "status"],
+      "update": ["update"],
+      "models": [
+        {
+          "id": "claude-opus-5-5",
+          "say": ["opus 5.5", "claude opus 5.5", "opus"],
+          "input_usd_per_mtok": 4,
+          "output_usd_per_mtok": 20,
+          "efforts": ["low", "medium", "high", "xhigh", "max"]
+        },
+        {
+          "id": "claude-fable-5-1",
+          "say": ["fable 5.1", "fable"],
+          "input_usd_per_mtok": 10,
+          "output_usd_per_mtok": 50,
+          "efforts": ["low", "medium", "high", "xhigh", "max"]
+        },
+        {
+          "id": "claude-sonnet-5",
+          "say": ["sonnet 5", "sonnet"],
+          "input_usd_per_mtok": 2,
+          "output_usd_per_mtok": 10,
+          "efforts": ["low", "medium", "high", "xhigh", "max"]
+        },
+        {
+          "id": "claude-haiku-4-5-20251001",
+          "say": ["haiku 4.5", "haiku"],
+          "input_usd_per_mtok": 1,
+          "output_usd_per_mtok": 5,
+          "efforts": []
+        }
+      ]
+    },
+    "codex": {
+      "bin": "codex",
+      "version": ["--version"],
+      "auth": ["login", "status"],
+      "update": ["update"],
+      "models": [
+        {
+          "id": "gpt-6-astra",
+          "say": ["astra", "gpt-6 astra", "gpt-6-astra"],
+          "input_usd_per_mtok": 10,
+          "output_usd_per_mtok": 50,
+          "efforts": ["low", "medium", "high", "xhigh", "max", "ultra"]
+        },
+        {
+          "id": "gpt-5.6-sol",
+          "say": ["sol", "gpt-5.6 sol", "gpt-5.6-sol"],
+          "input_usd_per_mtok": 4,
+          "output_usd_per_mtok": 20,
+          "efforts": ["low", "medium", "high", "xhigh", "max", "ultra"]
+        },
+        {
+          "id": "gpt-5.6-terra",
+          "say": ["terra", "gpt-5.6 terra", "gpt-5.6-terra"],
+          "input_usd_per_mtok": 2,
+          "output_usd_per_mtok": 12,
+          "efforts": ["low", "medium", "high", "xhigh", "max", "ultra"]
+        },
+        {
+          "id": "gpt-5.6-luna",
+          "say": ["luna", "gpt-5.6 luna", "gpt-5.6-luna"],
+          "input_usd_per_mtok": 0.2,
+          "output_usd_per_mtok": 1.2,
+          "efforts": ["low", "medium", "high", "xhigh", "max"]
+        },
+        {
+          "id": "gpt-5.5",
+          "say": ["gpt-5.5"],
+          "input_usd_per_mtok": 5,
+          "output_usd_per_mtok": 30,
+          "efforts": ["low", "medium", "high", "xhigh"]
+        },
+        {
+          "id": "gpt-5.4",
+          "say": ["gpt-5.4"],
+          "input_usd_per_mtok": 2.5,
+          "output_usd_per_mtok": 15,
+          "efforts": ["low", "medium", "high", "xhigh"]
+        }
+      ]
+    },
+    "grok": {
+      "bin": "grok",
+      "version": ["--version"],
+      "auth": ["models"],
+      "auth_expect": "logged in",
+      "update": ["update"],
+      "models": [
+        {
+          "id": "grok-4.7",
+          "say": ["grok 4.7", "grok-4.7"],
+          "input_usd_per_mtok": 2,
+          "output_usd_per_mtok": 6,
+          "efforts": ["low", "medium", "high", "xhigh"]
+        },
+        {
+          "id": "grok-4.7-build-fast",
+          "say": ["grok 4.7 fast", "grok-4.7-build-fast"],
+          "input_usd_per_mtok": 4,
+          "output_usd_per_mtok": 12,
+          "efforts": ["low", "medium", "high", "xhigh"]
+        },
+        {
+          "id": "grok-4.6",
+          "say": ["grok 4.6", "grok-4.6"],
+          "input_usd_per_mtok": 2,
+          "output_usd_per_mtok": 6,
+          "efforts": ["low", "medium", "high", "xhigh"]
+        },
+        {
+          "id": "grok-4.5",
+          "say": ["grok 4.5", "grok-4.5"],
+          "input_usd_per_mtok": 2,
+          "output_usd_per_mtok": 6,
+          "efforts": ["low", "medium", "high"]
+        }
+      ]
+    },
+    "agy": {
+      "bin": "agy",
+      "version": [],
+      "auth": [],
+      "update": ["update"],
+      "efforts": ["low", "medium", "high"],
+      "models": []
+    },
+    "cursor": {
+      "bin": "cursor-agent",
+      "version": ["--version"],
+      "auth": ["status"],
+      "update": ["update"],
+      "effort_style": "bracket",
+      "models": []
+    }
+  }
+}
