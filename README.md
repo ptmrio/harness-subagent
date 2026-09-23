@@ -1,175 +1,183 @@
 # harness-subagent
 
-**Dispatch another coding-agent CLI as a one-shot subagent, then synthesize.**
+**Hand a bounded task to another coding-agent CLI, then judge what comes back.**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Agent Skills](https://img.shields.io/badge/Agent%20Skills-compatible-111111)](https://agentskills.io)
-[![Claude Code](https://img.shields.io/badge/Claude%20Code-headless-d97706)](https://code.claude.com/docs/en/headless)
-[![Codex](https://img.shields.io/badge/Codex-exec-10a37f)](https://github.com/openai/codex)
-[![Grok Build](https://img.shields.io/badge/Grok%20Build-CLI-000000)](https://docs.x.ai)
+[![License: MIT][mit-badge]][mit]
+[![Agent Skills][skills-badge]][agentskills]
+[![Claude Code][claude-badge]][claude]
+[![Codex][codex-badge]][codex]
+[![Grok Build][grok-badge]][grok]
+[![Cursor CLI][cursor-badge]][cursor]
 
 Ever wanted to call **Codex** from **Claude Code**?  
 Ever wanted **Grok Build** to invoke **Claude Code**?  
 Ever wanted **Claude Code** to send a diff to **GPT** for a second opinion?
 
-That's this skill. Stay in the parent you are already in — Cursor Agent, **cursor-agent**, Claude Code, Codex, Grok Build, or **Grok Bot**. It writes a brief, dispatches another coding-agent harness as a **one-shot subagent**, then the parent synthesizes.
+That is this skill. You stay in the agent you already use. It becomes the parent: it writes a short brief, starts another CLI in the background, reads that CLI's report, and tells you what it agrees with, what it does not, and what it will do next.
 
-The other harness is not an oracle. A model reviewing its own work reproduces its own blind spots; a differently-trained harness does not. That worth is destroyed the moment you forward its answer without judging it.
+The child is not an oracle. A model that reviews its own work repeats its own blind spots. A model trained by a different vendor may not. That value is lost if the parent forwards the answer without judging it.
 
-This is a [Claude skill](https://code.claude.com/docs/en/skills) in the [Agent Skills](https://agentskills.io) format. The same protocol works from any agent that can run a CLI in the background.
+Supported child CLIs: Claude Code (`claude`), Codex (`codex`), Grok Build (`grok`), Antigravity (`agy`), and the Cursor CLI (`cursor-agent`). The host picks the CLI, the model, and the effort. The skill does not rank jobs or assign personas.
 
-## Why I use it this way
+This is a [Claude skill](https://code.claude.com/docs/en/skills) in the [Agent Skills](https://agentskills.io) format. Any agent that can run a shell command in the background can use it.
 
-These are **my** defaults, not the protocol. The skill will not pick a harness from the job type. You name the CLI, or you pin defaults in a **user config file** the parent is instructed to read, or it asks once.
+**Do not use it** to install those CLIs, for questions the parent can answer from its own context, or inside a child it launched. A child never delegates again.
 
-I find **Opus** (Claude Code) superior at **UI work** — layout, interaction, the thing on the screen. I find **GPT / Codex** superior at **reviewing**, especially **visual review**: screenshots plus the named CSS/JS, then a verdict on whether the defect is real.
-
-So my default loop is: ship the UI with Opus, capture shots, dispatch Codex to confirm or refute, then the parent decides. Not the other way around, and never a paste-through of the subagent's report.
-
-Going the other direction is the same idea. If you are already in Codex or Grok Build and the job is a UI slice, dispatch Claude Code / Opus to implement it.
-
-If the parent is metered (for example Cursor **Grok Bot**), outsource the long run to CLIs that bill their own accounts. Same protocol; **cursor-agent** is Cursor’s CLI, a different parent from Grok Bot.
-
-## How to prompt
-
-Name the harness when you know it. **One job per spawn.** One `/harness-subagent` (or “orchestrate this”) is enough — do not paste this skill into every message.
-
-**Orchestrate (full loop)** — open-ended multi-step, or you ask for the full pipeline:
-
-- *Orchestrate this feature end-to-end.*
-- *Run the full loop: practices, implement, review, coherence.*
-- *Orchestrate this — Path A / architectural.*
-
-That classifies a path (Spike / Bounded / Architectural) and announces it. Architectural may run research → spec → plan → improve → implement → review [→ visual] → parent coherence. Bounded is implement → review. Single-job lines after “Orchestrate this — …” stay **one-shot** (e.g. second opinion = review only; “improve this plan” = improve only).
-
-**Good (one-shot)**
-
-- *Orchestrate this — outsource the slice to Codex.*
-- *Ask Codex to review this diff.*
-- *Have Claude Code implement only the named UI paths.* (Then a **second** spawn for review, or parent reviews.)
-- *You write the spec; ask Codex to pressure-test the plan.* (Two jobs → two spawns or parent+spawn.)
-- *Ask Codex to pressure-test / harden this plan.*
-- *Get a visual review from Codex of the screenshots I just took.*
-- *Ask Grok Build to try to refute this plan.*
-- *Ask Fable to review this diff.* (Claude; pins `--model fable` — Fable 5.1 on Claude Code ≥2.1.255)
-- *Ask Astra to review this diff.* (Codex; pins `--model gpt-6-astra`)
-- *Ask Codex from Claude Code* / *have Grok Build invoke Claude Code.*
-
-**Avoid**
-
-- “Self review” and “spawn Claude” in the same breath — pick one.
-- Pasting diffs or whole files when named paths suffice.
-- Interrupting a wait unless you intend to cancel the child.
-- Expecting the parent to swap models when a child hits usage limits — it will stop and ask (and stop later orchestrate stages).
-- One spawn that both implements and reviews — that is two jobs.
-
-## Opinionated roles
-
-Briefs pull personality from `references/roles.md` (Superpowers by default as **named** skills only — no full workflow restart in the child):
-
-| Role | Bar |
-|---|---|
-| `code-review` | Adversarial: bugs, overkill, hacks, useless tests, best-practice drift |
-| `code-review-visual` | Change review + holistic user-walk (screenshots-only = fallback) |
-| `implement` | TDD for useful contracts; skip ceremony tests with a GATES reason |
-| `research` | Official/modern sources; modern over legacy when they conflict |
-| `improve` | Harden a spec/plan: KEEP/CUT/ADD/SPLIT; report-only; net task delta |
-
-## Recommended use
-
-Author defaults (not the protocol):
-
-| Job | I dispatch |
-|---|---|
-| Heavy slice on a metered parent (e.g. Grok Bot) | Claude Code, Codex, or Grok Build CLI — brief, then synthesize |
-| UI implementation, layout, interaction | Claude Code (Opus) |
-| Sustained writing (README, skill copy, About) | Grok Build CLI (name it this turn if the parent is already Grok) |
-| Research (docs, competitive, GitHub inventory) | Codex |
-| Harden a plan before implement | a *different* harness than the one that wrote it |
-| Diff / adversarial review | Codex |
-| Visual review (live walk or screenshots + named sources) | Codex |
-| Pressure-test a plan (assume it is flawed) | a *different* harness than the one that wrote it |
-| Stuck bug, two fixes already failed | a *different* harness than the parent |
-
-**Worth a run:** second opinions, adversarial review, plan hardening, visual confirmation, unstuck diagnosis, sustained writing, research lookups, a bounded implement slice assigned to that harness, full orchestrate loops.
-
-The **child is a worker**, not a second orchestrator. Briefs start with `YOU ARE THE WORKER. DO NOT SPAWN`. Do not put `scripts/spawn.sh` flags in the brief.
-
-**Not worth a run:** naming, style, formatting, or anything the parent can already answer from context.
-
-The parent writes a **job-bounded brief** (named starting paths and a tight investigation — not a pasted dump and not a file jail), runs `scripts/spawn.sh` in the background, then reports in CTO style (bullets, ASCII when useful):
-
-1. What was asked
-2. The harness verdict (quoted)
-3. Where it agrees and disagrees, with reasons
-4. A recommendation
-
-If you only paste the subagent's answer, you wasted the run.
-
-## Install
+## Installation
 
 ```bash
 npx skills add ptmrio/harness-subagent -g
 ```
 
-That is the [skills.sh](https://skills.sh) installer: one command, copies the whole skill (`SKILL.md`, `references/`, `scripts/`, `assets/`, `evals/`, `tests/`) into the agents on this machine — Cursor Agent, Claude Code, Codex, and the rest the CLI detects. `-g` is user-level. It may fan out **identical copies**; always run `scripts/spawn.sh` from the `SKILL.md` you loaded. Do not keep a second hand-copied tree.
+That is the [skills.sh](https://skills.sh) installer. `-g` installs at user level, for example `~/.claude/skills/harness-subagent` for Claude Code or `~/.cursor/skills/harness-subagent` for Cursor ([paths](https://github.com/vercel-labs/skills#supported-agents)). Update later with `npx skills update -g`.
 
-Grok Bot is a separate app; it only uses this skill if that Bot can run a CLI and can load the skill (or you point it at `SKILL.md`).
-
-### Pin defaults (optional)
-
-The CLIs do not load this file. The **skill** tells the parent to read it when you did not name a harness (utterance → this file → ask once). It lives **outside** the skill clone so updates cannot overwrite it.
-
-```text
-~/.config/harness-subagent/config.toml
-```
-
-Copy `assets/config.example.toml` there (`spec`, `plan`, `implement`, `writer`, `research`, `improve`, `code-review`, `code-review-visual`, …). Values may be a CLI or `self` (parent does that job). Optional `[roles.<key>]` overlays pin model/effort per role. `cursor` from a Cursor parent is skipped (same family), not treated as `self`. Aliases `researcher` → `research`, `harden` / `plan-review` → `improve`. Override path: `$HARNESS_SUBAGENT_CONFIG`. Schema: `references/user-config.md`.
-
-Git clone if you do not want `npx`:
+Without npx, clone it into your agent's skills folder:
 
 ```bash
 git clone https://github.com/ptmrio/harness-subagent.git ~/.claude/skills/harness-subagent
 ```
 
-Windows PowerShell:
+**Requirements**
 
-```powershell
-git clone https://github.com/ptmrio/harness-subagent.git "$HOME\.claude\skills\harness-subagent"
-```
+- At least one of `claude`, `codex`, `grok`, `agy`, or `cursor-agent` on `PATH` and logged in.
+- Python 3 (`python` or `python3`).
+- Windows: Git Bash. The parent runs `scripts/spawn.sh` through Git Bash. [SKILL.md](SKILL.md) has the exact invocation.
 
-Cursor also loads `~/.claude/skills/`. Native Cursor path if you prefer: `~/.cursor/skills/harness-subagent`.
+### Health check
 
-Already have a checkout? Copy the skill root, not just `SKILL.md`:
-
-```bash
-mkdir -p ~/.claude/skills/harness-subagent
-cp SKILL.md LICENSE README.md ~/.claude/skills/harness-subagent/
-cp -r references scripts assets evals tests ~/.claude/skills/harness-subagent/
-```
-
-Then ask in those words: orchestrate this, get a second opinion, pressure-test a plan or diff, or call Codex / Claude Code / Grok as a subagent.
-
-## Requirements
-
-At least one of `claude`, `codex`, `grok`, `agy`, or `cursor-agent` on `PATH` and logged in. Optional extras: `gemini` (legacy / enterprise), `opencode`, `droid` (not in `scripts/spawn.sh`) — see `references/more-clis.md`. Windows, WSL, Linux, and macOS.
-
-On native Windows the parent must run `scripts/spawn.sh` through Git Bash (`%ProgramFiles%\Git\bin\bash.exe`) as a **file argument**. WSL `bash.exe` and a PowerShell-quoted `bash -lc` one-liner will not work.
-
-## Test
-
-Git Bash, from a checkout. Dry-run plus PATH-isolated stubs (no real CLIs):
+From the installed skill folder:
 
 ```bash
-bash tests/spawn_test.sh
+scripts/health.sh            # one row per CLI: name, version, login, update
+scripts/health.sh --update   # same, and runs each CLI's own update command
 ```
 
-Real CLIs on PATH: parse Auto flags, then one live `HELLO_WORLD` review per backend:
+Example output (tab-separated):
 
-```bash
-bash tests/hello_world.sh
+```text
+claude   2.1.280 (Claude Code)   logged-in       -
+codex    codex-cli 0.155.1       logged-in       -
+grok     missing                 -               -
+agy      present                 login-unknown   -
+cursor   2026.09.08-6caf4ff      logged-in       -
 ```
+
+The exit code is 0 only when every CLI is present, every CLI with a login check is logged in, and (with `--update`) every update succeeded. A CLI you never use shows up as `missing` and makes the exit code 1. Read the rows. `agy` has no login command, so it always reports `login-unknown`. The per-CLI login and update commands are in the Health section of [SKILL.md](SKILL.md#health).
+
+## Use it
+
+The protocol is [SKILL.md](SKILL.md). This is the short version.
+
+1. **You name the CLI and the model.** Spoken names such as Opus 5.5, Fable, Sonnet, Astra, Sol, Terra, Luna, and Grok 4.7 resolve to exact ids in [references/models.md](references/models.md), which also lists prices and effort levels. For Antigravity and Cursor, pass the id that CLI accepts. If you name neither CLI nor model, the parent asks once.
+2. **The parent writes a brief.** It creates `brief.md` in a new temp run directory: one task sentence, where to look, what was already tried, and when it is done. It names paths. It does not paste the repo.
+3. **The parent runs `scripts/spawn.sh` in the background** and waits for it to exit.
+4. **The parent judges the report.** It reads `report.md` (or `last.md`) and `capture-status.txt`, then says what it agrees with, what it does not, and what it will do. A pasted report is not an answer.
+
+```text
+you ──> parent ──brief.md──> spawn.sh ──> child CLI
+             ^                               │
+             └──────── report.md ────────────┘
+parent judges ──> you
+```
+
+Things you can say:
+
+- *Ask Codex with Astra, effort high, to review the diff on this branch.*
+- *Have Claude Code with Opus 5.5 build the settings page layout in `src/ui/settings/`.*
+- *Ask Grok 4.7 to try to refute the plan in `docs/plan.md`.*
+- *Use harness-subagent: Sol, medium effort. Find out why `tests/api` flakes on CI. Report only, no edits.*
+- *Get Fable 5.1 to review this migration before I merge it.*
+
+One job per spawn. "Implement and then review it" is two spawns, or one spawn plus the parent's own review.
+
+If the child hits a usage limit that resets within 24 hours, `spawn.sh` waits and resumes that same session once. Any other stop ends the run. The parent reports it and waits for you. It does not switch CLI or model on its own.
+
+## With Superpowers
+
+[Superpowers](https://github.com/obra/superpowers) is a development methodology built from skills. Several of its skills dispatch subagents through the host's own subagent tool:
+
+- `requesting-code-review` sends a reviewer subagent the base and head commits.
+- `subagent-driven-development` runs an implementer and a task reviewer per plan task, then a whole-branch review at the end.
+- `dispatching-parallel-agents` runs one agent per independent problem.
+
+Superpowers says user instructions (`CLAUDE.md`, `AGENTS.md`, `GEMINI.md`) take precedence over its skills. So the routing goes in your host instructions. This skill does not load Superpowers, and Superpowers does not need to know about this skill.
+
+**Best practice:** route the review steps, not every subagent. Superpowers already runs a review after each task. The whole-branch review at the end of `subagent-driven-development`, and `requesting-code-review` before a merge, are the points where a different vendor's model adds the most. Keep implementer subagents native. A CLI spawn per task costs a fresh process and a fresh context.
+
+Example `CLAUDE.md` lines:
+
+```markdown
+## Reviews
+- When a Superpowers skill asks for a whole-branch review or a pre-merge code
+  review, run that review with harness-subagent: Codex, model Sol, effort high.
+- Keep implementer and per-task reviewer subagents native.
+- Treat the report like any reviewer's: fix what holds up, push back with reasons.
+```
+
+The brief the parent writes then looks like this:
+
+```markdown
+# YOU ARE THE WORKER. DO NOT SPAWN.
+Do not load harness-subagent. Do not run scripts/spawn.sh.
+
+## Task
+Review the branch diff a7981ec..3df7661 against the plan. Report issues by severity.
+
+## Where to look
+docs/superpowers/plans/deployment-plan.md, then `git diff a7981ec..3df7661`.
+
+## Already tried
+Per-task reviews passed for tasks 1–4.
+
+## Done when
+Every Critical and Important issue names a file and line, or the report says there are none.
+```
+
+If the child CLI also has Superpowers installed, its `using-superpowers` bootstrap tells a dispatched subagent to skip it. The brief's first line already says the child is a worker.
+
+## With pstack `poteto-mode`
+
+[pstack](https://github.com/cursor/plugins/tree/main/pstack) is poteto's skill set for Cursor, installed with `/add-plugin pstack`. [`/poteto-mode`](https://github.com/cursor/plugins/blob/main/pstack/skills/poteto-mode/SKILL.md) is its entry point. It matches a task to one of twenty-three playbooks and runs the other skills as the steps need them. You start it by name, and it stays on across turns.
+
+Its subagent rules already fit this skill's protocol. It runs subagents in the background, passes file pointers instead of pasted context, sets an explicit model per role, and says: "You own every subagent's work. Review the diff and write your own summary, don't pass through what it said." So harness-subagent only changes where a delegate runs: in another vendor's CLI instead of a Cursor `Task`.
+
+**Best practice:** put the routing in its own always-applied Cursor rule. `/setup-pstack` writes per-role models to `~/.cursor/rules/pstack-models.mdc` and overwrites the whole file each time it runs, so lines you add there get lost. Leave pstack's multi-model skills (`interrogate`, `arena`, `architect`, `swarm`) on their configured panels unless you want to replace them.
+
+Example `~/.cursor/rules/harness-subagent.mdc`:
+
+```markdown
+---
+description: Route larger poteto-mode delegates through harness-subagent
+alwaysApply: true
+---
+When poteto-mode would spawn a subagent for a medium-to-demanding task,
+use the harness-subagent skill instead.
+Use Opus for UI work.
+Use a named Codex model, such as Sol or Astra, for visual testing.
+Leave interrogate, arena, architect, and swarm panels as configured.
+```
+
+### This is how I use it.
+
+This is my setup, not the protocol. The skill does not enforce these model choices.
+
+I run pstack `poteto-mode` in the Cursor GUI, locally. I tell the parent: whenever you would spawn a subagent for a medium-to-demanding task, use harness-subagent instead. Use Opus for UI work. Use Codex for visual testing.
+
+Opus is the spoken name for Opus 5.5. Codex is the CLI, so the visual-testing line still needs a model from [references/models.md](references/models.md), such as Sol or Astra. Those picks are mine. They are not a ranking the skill enforces. Put your own in your rule.
 
 ## License
 
-[MIT](LICENSE) — Gerhard Petermeir / [ptmrio](https://github.com/ptmrio). Issues welcome; PRs are not the default.
+[MIT](LICENSE). Gerhard Petermeir / [ptmrio](https://github.com/ptmrio). Issues welcome; PRs are not the default.
+
+[mit-badge]: https://img.shields.io/badge/License-MIT-blue.svg
+[mit]: LICENSE
+[skills-badge]: https://img.shields.io/badge/Agent%20Skills-compatible-111111
+[agentskills]: https://agentskills.io
+[claude-badge]: https://img.shields.io/badge/Claude%20Code-headless-d97706
+[claude]: https://code.claude.com/docs/en/headless
+[codex-badge]: https://img.shields.io/badge/Codex-exec-10a37f
+[codex]: https://github.com/openai/codex
+[grok-badge]: https://img.shields.io/badge/Grok%20Build-CLI-000000
+[grok]: https://docs.x.ai
+[cursor-badge]: https://img.shields.io/badge/Cursor-CLI-000000
+[cursor]: https://cursor.com/docs/cli/overview
