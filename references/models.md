@@ -42,13 +42,15 @@ Sources: https://platform.claude.com/docs/en/about-claude/pricing and https://ww
 | Say | Id | Input | Output | Efforts |
 |---|---|---:|---:|---|
 | Astra | `gpt-6-astra` | 10 | 50 | low, medium, high, xhigh, max, ultra |
-| Sol | `gpt-5.6-sol` | 4 | 20 | low, medium, high, xhigh, max, ultra |
-| Terra | `gpt-5.6-terra` | 2 | 12 | low, medium, high, xhigh, max, ultra |
-| Luna | `gpt-5.6-luna` | 0.20 | 1.20 | low, medium, high, xhigh, max |
+| Sol, GPT-6 Sol | `gpt-6-sol` | 2 | 10 | low, medium, high, xhigh, max, ultra |
+| Luna, GPT-6 Luna | `gpt-6-luna` | 0.10 | 0.50 | low, medium, high, xhigh, max |
+| GPT-5.6 Sol | `gpt-5.6-sol` | 4 | 20 | low, medium, high, xhigh, max, ultra |
+| Terra, GPT-5.6 Terra | `gpt-5.6-terra` | 2 | 12 | low, medium, high, xhigh, max, ultra |
+| GPT-5.6 Luna | `gpt-5.6-luna` | 0.20 | 1.20 | low, medium, high, xhigh, max |
 | GPT-5.5 | `gpt-5.5` | 5 | 30 | low, medium, high, xhigh |
 | GPT-5.4 | `gpt-5.4` | 2.50 | 15 | low, medium, high, xhigh |
 
-GPT-5.4 is retired for ChatGPT sign-in as of 2026-08-31. Sol's 4/20 price is promotional at least through 2026-11-21. Ultra is a product mode that runs parallel agents. It is not a separate per-token price.
+Saying Sol or Luna selects the GPT-6 ids. GPT-5.6 Sol and GPT-5.6 Luna stay under those versioned names. There is no GPT-6 Terra as of 2026-09-23, so Terra still selects `gpt-5.6-terra`. GPT-5.4 is retired for ChatGPT sign-in as of 2026-08-31. GPT-5.6 Sol's 4/20 price is promotional at least through 2026-11-21. Prices above are standard short-context rates. Ultra is a product mode that runs parallel agents. It is not a separate per-token price. The API pages for GPT-6 Sol and Luna also list `none` and default to medium. This CLI's catalog does not list `none`. It does list `ultra` for Astra and GPT-6 Sol.
 
 | Effort | What OpenAI says |
 |---|---|
@@ -64,11 +66,11 @@ Published scores. These are not one shared test.
 | Model | Benchmark | Score | Effort label |
 |---|---|---:|---|
 | Astra | Terminal-Bench 4.0 | 57.9% | maximum across efforts, winning effort not named |
-| Sol | Terminal-Bench 4.0 | 37.3% | maximum across efforts, winning effort not named |
+| GPT-5.6 Sol | Terminal-Bench 4.0 | 37.3% | maximum across efforts, winning effort not named |
 | GPT-5.5 | Terminal-Bench 2.0 | 82.7% | xhigh |
 | GPT-5.4 | Terminal-Bench 2.0 | 75.1% | xhigh |
 
-Sources: https://developers.openai.com/api/docs/pricing and the model pages linked from it, plus https://openai.com/index/gpt-6-astra/ and https://openai.com/index/introducing-gpt-5-5/ (accessed 2026-09-22).
+Sources: https://developers.openai.com/api/docs/pricing, https://developers.openai.com/api/docs/models/gpt-6-sol, and https://developers.openai.com/api/docs/models/gpt-6-luna (accessed 2026-09-23). Earlier scores: https://openai.com/index/gpt-6-astra/ and https://openai.com/index/introducing-gpt-5-5/ (accessed 2026-09-22). No GPT-6 Sol or Luna benchmark score is copied here, because those pages did not publish one.
 
 ## Grok Build (`grok`)
 

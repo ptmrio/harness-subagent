@@ -337,12 +337,12 @@ elif [[ "$BACKEND" == claude || "$BACKEND" == grok ]]; then
 fi
 
 # Claude's final stdout is the last turn only. report.md is the durable result.
-CLAUDE_REPORT_HINT="Write the complete report to report.md in the run directory ${RUN} before any cleanup. The first line states the result in plain text."
+CLAUDE_REPORT_HINT="Write the complete report to report.md in the run directory ${RUN} before any cleanup. The first line is VERDICT followed by the result, in plain text."
 
 PROMPT_FILE="$RUN/prompt.md"
 {
   cat "$BRIEF"
-  printf '\n\nWrite report.md to %s before you exit. The first line states the result in plain text.\n' "$RUN/report.md"
+  printf '\n\nWrite report.md to %s before you exit. The first line is VERDICT followed by the result, in plain text.\n' "$RUN/report.md"
 } >"$PROMPT_FILE"
 if [[ "$BACKEND" == grok && "$DRY" -eq 0 ]]; then
   GROK_PROMPT_COPY="$PROJECT/.harness-subagent-brief.md"

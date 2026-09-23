@@ -57,6 +57,31 @@ else
   fail_msg "Astra dry-run (exit=$ec out=$out err=$err)"
 fi
 
+# Bare Sol and Luna select the GPT-6 ids. Versioned names keep GPT-5.6.
+run="$(new_run)"
+run_cmd "$BASH_BIN" "$SPAWN" --model Sol --project "$ROOT" --run "$run" --dry-run
+if [[ "$ec" -eq 0 && "$out" == *"-m gpt-6-sol"* && "$out" != *"-m gpt-5.6-sol"* ]]; then
+  ok "Sol resolves to gpt-6-sol"
+else
+  fail_msg "Sol dry-run (exit=$ec out=$out err=$err)"
+fi
+
+run="$(new_run)"
+run_cmd "$BASH_BIN" "$SPAWN" --model "GPT-5.6 Sol" --project "$ROOT" --run "$run" --dry-run
+if [[ "$ec" -eq 0 && "$out" == *"-m gpt-5.6-sol"* ]]; then
+  ok "GPT-5.6 Sol keeps its versioned id"
+else
+  fail_msg "GPT-5.6 Sol dry-run (exit=$ec out=$out err=$err)"
+fi
+
+run="$(new_run)"
+run_cmd "$BASH_BIN" "$SPAWN" --model Luna --project "$ROOT" --run "$run" --dry-run
+if [[ "$ec" -eq 0 && "$out" == *"-m gpt-6-luna"* ]]; then
+  ok "Luna resolves to gpt-6-luna"
+else
+  fail_msg "Luna dry-run (exit=$ec out=$out err=$err)"
+fi
+
 # Opus 5.5 resolves, and a chosen effort is passed through.
 run="$(new_run)"
 run_cmd "$BASH_BIN" "$SPAWN" --model "Opus 5.5" --effort high --project "$ROOT" --run "$run" --dry-run

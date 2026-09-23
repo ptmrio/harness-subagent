@@ -55,7 +55,7 @@ Paths, commands, and exclusions.
 ## Done when
 ```
 
-Name paths. Do not paste the repo. `spawn.sh` appends the `report.md` path. The child writes that file before it exits. The first line states the result.
+Name paths. Do not paste the repo. `spawn.sh` appends the `report.md` path. The child writes that file before it exits. The first line is `VERDICT` followed by the result.
 
 Grok cannot be relied on to read the temp run directory. `spawn.sh` copies the prompt into the project for that launch and deletes the copy on exit.
 

@@ -52,8 +52,22 @@
           "efforts": ["low", "medium", "high", "xhigh", "max", "ultra"]
         },
         {
+          "id": "gpt-6-sol",
+          "say": ["sol", "gpt-6 sol", "gpt-6-sol"],
+          "input_usd_per_mtok": 2,
+          "output_usd_per_mtok": 10,
+          "efforts": ["low", "medium", "high", "xhigh", "max", "ultra"]
+        },
+        {
+          "id": "gpt-6-luna",
+          "say": ["luna", "gpt-6 luna", "gpt-6-luna"],
+          "input_usd_per_mtok": 0.1,
+          "output_usd_per_mtok": 0.5,
+          "efforts": ["low", "medium", "high", "xhigh", "max"]
+        },
+        {
           "id": "gpt-5.6-sol",
-          "say": ["sol", "gpt-5.6 sol", "gpt-5.6-sol"],
+          "say": ["gpt-5.6 sol", "gpt-5.6-sol", "5.6 sol"],
           "input_usd_per_mtok": 4,
           "output_usd_per_mtok": 20,
           "efforts": ["low", "medium", "high", "xhigh", "max", "ultra"]
@@ -67,7 +81,7 @@
         },
         {
           "id": "gpt-5.6-luna",
-          "say": ["luna", "gpt-5.6 luna", "gpt-5.6-luna"],
+          "say": ["gpt-5.6 luna", "gpt-5.6-luna", "5.6 luna"],
           "input_usd_per_mtok": 0.2,
           "output_usd_per_mtok": 1.2,
           "efforts": ["low", "medium", "high", "xhigh", "max"]
